@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express'
 import cors from 'cors'
 import 'dotenv/config'
-import { database, User, Database } from './database'
+import { database, User } from './database'
 
 interface RequestWithBody extends Request {
   body: { [key: string]: string | undefined }
@@ -50,10 +50,33 @@ app.post('/register', cors(corsOptions), (req: RequestWithBody, res: Response) =
     users.push(newUser)
     const returnedUser = {...newUser} as Partial<User>
     delete returnedUser.id
-    res.json(returnedUser)
+    res.status(201).json(returnedUser)
     //or return the last item in the array: res.json(users[users.length - 1])
   } else {
     res.status(400).json('Invalid credentials')
+  }
+})
+
+app.get('/profile/:id', cors(corsOptions), (req: Request, res: Response) => {
+  const { id } = req.params
+  const { users } = database
+  const user: User | undefined = users.find(user => user.id === id)
+  if(user) {
+    res.json(user)
+  } else {
+    res.status(404).json('user not found')
+  }
+})
+
+app.put('/image', cors(corsOptions), (req: RequestWithBody, res: Response) => {
+  const { email } = req.body
+  const { users } = database
+  const userIndex: number = users.findIndex(user => user.email === email)
+  if(userIndex >= 0) {
+    users[userIndex].entries++
+    res.status(201).json(users[userIndex])
+  } else {
+    res.status(400).json('Unable to update user entries')
   }
 })
 

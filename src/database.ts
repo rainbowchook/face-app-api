@@ -7,11 +7,11 @@ export interface User {
   joined: Date;
 }
 
-export interface Database {
+interface Database {
   users: User[]
 }
 
-export const database = {
+export const database: Database = {
   users: [
     {
       id: '123',

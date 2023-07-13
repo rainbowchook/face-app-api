@@ -46,11 +46,34 @@ app.post('/register', (0, cors_1.default)(corsOptions), (req, res) => {
         users.push(newUser);
         const returnedUser = Object.assign({}, newUser);
         delete returnedUser.id;
-        res.json(returnedUser);
+        res.status(201).json(returnedUser);
         //or return the last item in the array: res.json(users[users.length - 1])
     }
     else {
         res.status(400).json('Invalid credentials');
+    }
+});
+app.get('/profile/:id', (0, cors_1.default)(corsOptions), (req, res) => {
+    const { id } = req.params;
+    const { users } = database_1.database;
+    const user = users.find(user => user.id === id);
+    if (user) {
+        res.json(user);
+    }
+    else {
+        res.status(404).json('user not found');
+    }
+});
+app.put('/image', (0, cors_1.default)(corsOptions), (req, res) => {
+    const { email } = req.body;
+    const { users } = database_1.database;
+    const userIndex = users.findIndex(user => user.email === email);
+    if (userIndex >= 0) {
+        users[userIndex].entries++;
+        res.status(201).json(users[userIndex]);
+    }
+    else {
+        res.status(400).json('Unable to update user entries');
     }
 });
 app.listen(PORT, () => console.log(`Server listening on ${PORT}`));
