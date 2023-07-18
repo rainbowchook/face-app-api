@@ -2,13 +2,19 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  password: string;
   entries: number;
   joined: Date;
 }
 
+export interface Login {
+  id: string;
+  email: string;
+  hash: string;
+}
+
 interface Database {
-  users: User[]
+  users: User[],
+  logins: Login[]
 }
 
 export const database: Database = {
@@ -17,7 +23,6 @@ export const database: Database = {
       id: '123',
       name: 'Cookie Monster',
       email: 'cookie@monsters.com',
-      password: 'pass123',
       entries: 2,
       joined: new Date()
     },
@@ -25,9 +30,20 @@ export const database: Database = {
       id: '124',
       name: 'Elmo',
       email: 'elmo@monsters.com',
-      password: 'pass123',
       entries: 1,
       joined: new Date()
+    }
+  ],
+  logins: [
+    {
+      id: '123',
+      email: 'cookie@monsters.com',
+      hash: 'pass123',
+    },
+    {
+      id: '124',
+      email: 'elmo@monsters.com',
+      hash: 'pass123',
     }
   ]
 }

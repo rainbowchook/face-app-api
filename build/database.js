@@ -7,7 +7,6 @@ exports.database = {
             id: '123',
             name: 'Cookie Monster',
             email: 'cookie@monsters.com',
-            password: 'pass123',
             entries: 2,
             joined: new Date()
         },
@@ -15,9 +14,20 @@ exports.database = {
             id: '124',
             name: 'Elmo',
             email: 'elmo@monsters.com',
-            password: 'pass123',
             entries: 1,
             joined: new Date()
+        }
+    ],
+    logins: [
+        {
+            id: '123',
+            email: 'cookie@monsters.com',
+            hash: 'pass123',
+        },
+        {
+            id: '124',
+            email: 'elmo@monsters.com',
+            hash: 'pass123',
         }
     ]
 };
