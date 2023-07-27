@@ -6,45 +6,40 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 require("dotenv/config");
-const database_1 = require("./database");
-// import knex from 'knex'
-const signin_1 = require("./controllers/signin");
-const register_1 = require("./controllers/register");
-const profile_1 = require("./controllers/profile");
-const image_1 = require("./controllers/image");
+const usersRoutes_1 = require("./routes/usersRoutes");
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;
-app.use(express_1.default.json());
-app.options('*', (0, cors_1.default)());
+const allowedOrigins = [`http://localhost:${PORT}`];
 const corsOptions = {
-    origin: true,
+    // origin: true,
+    origin: allowedOrigins,
     optionsSuccessStatus: 200,
 };
-app.get('/', (0, cors_1.default)(corsOptions), (req, res) => {
-    (0, database_1.pg)('users')
-        .select('*')
-        .then((users) => {
-        console.log(users);
-        res.json(users);
-    });
-    // const { users } = database
-    // res.json(users)
-    // res.send(`Reached cors-enabled site in ${process.env.NODE_ENV}`)
+app.use((0, cors_1.default)(corsOptions));
+app.options(allowedOrigins, (0, cors_1.default)());
+app.use(express_1.default.json());
+app.use('/users', usersRoutes_1.router);
+app.get('/', (req, res) => {
+    res.send(`Reached cors-enabled site in ${process.env.NODE_ENV}`);
 });
-app.post('/signin', (0, cors_1.default)(corsOptions), (0, signin_1.handleSignin)(database_1.pg));
-app.post('/register', (0, cors_1.default)(corsOptions), (0, register_1.handleRegister)(database_1.pg));
-app.get('/profile/:id', (0, cors_1.default)(corsOptions), (0, profile_1.handleProfile)(database_1.pg));
-app.put('/image', (0, cors_1.default)(corsOptions), (0, image_1.handleImage)(database_1.pg));
 app.listen(PORT, () => console.log(`Server listening on ${PORT}`));
 console.log('hi there');
 /*
+NEW ROUTES (RESTful convention for CRUD operations):
 / -> GET res = this is working
-/signin -> POST = success/fail
-/register -> POST = user
-/profile/:userId -> GET = user
-/image -> PUT = user
+/users/signin -> POST = success/fail
+/users -> POST = user - CREATE
+/users/:userId -> GET = user - READ
+/users/ -> GET = users - READ
+/users/:userId/images -> PUT = user - UPDATE (previously /image)
+TODO /users/:userId -> DELETE - DELETE (need app.options preflight for CORS - header not GET/HEAD/POST)
+TODO /images/ -> POST - Make API call with image; returns JSON results
 
-TODOs:
-/profile/:userId -> PUT = user
-/profile/:userId -> DELETE = success/fail
+OLD ROUTES:
+/ -> GET res = this is working
+/signin -> POST = success/fail : /users/signin
+/register -> POST = user : /users/register
+/profile/:userId -> GET = user : /users/:userId
+/image -> PUT = user : /users/:userId/images
+
 */

@@ -1,9 +1,8 @@
-import { Response } from "express"
-import { RequestWithBody } from "../server"
+import { Request, Response } from "express"
 import { User, Knex } from '../database'
 
-export const handleImage = (pg: Knex) => (req: RequestWithBody, res: Response) => {
-  const { id } = req.body
+export const handleImage = (pg: Knex) => (req: Request, res: Response) => {
+  const { id } = req.params
   // pg<User, Pick<User, 'email' | 'entries'>>('users')
   pg<User, Pick<User, 'entries'>>('users')
     .where({ id })

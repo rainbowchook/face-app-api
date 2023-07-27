@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handleImage = void 0;
 const handleImage = (pg) => (req, res) => {
-    const { id } = req.body;
+    const { id } = req.params;
     // pg<User, Pick<User, 'email' | 'entries'>>('users')
     pg('users')
         .where({ id })
