@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.handleRemoveUser = exports.handleUsers = exports.handleImage = exports.handleProfile = exports.handleRegister = exports.handleSignin = void 0;
+exports.handleImageApiCall = exports.handleRemoveUser = exports.handleUsers = exports.handleImage = exports.handleProfile = exports.handleRegister = exports.handleSignin = void 0;
 var signin_1 = require("./signin");
 Object.defineProperty(exports, "handleSignin", { enumerable: true, get: function () { return signin_1.handleSignin; } });
 var register_1 = require("./register");
@@ -13,3 +13,5 @@ var users_1 = require("./users");
 Object.defineProperty(exports, "handleUsers", { enumerable: true, get: function () { return users_1.handleUsers; } });
 var remove_1 = require("./remove");
 Object.defineProperty(exports, "handleRemoveUser", { enumerable: true, get: function () { return remove_1.handleRemoveUser; } });
+var imageApiCall_1 = require("./imageApiCall");
+Object.defineProperty(exports, "handleImageApiCall", { enumerable: true, get: function () { return imageApiCall_1.handleImageApiCall; } });

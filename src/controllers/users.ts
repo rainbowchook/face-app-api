@@ -1,4 +1,4 @@
-import { Request, Response, IRouterHandler } from 'express'
+import { Request, Response } from 'express'
 import { User, Knex } from '../database'
 
 export const handleUsers = (pg: Knex) => (req: Request, res: Response) => {

@@ -7,9 +7,10 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 require("dotenv/config");
 const usersRoutes_1 = require("./routes/usersRoutes");
+const imagesRoutes_1 = require("./routes/imagesRoutes");
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;
-const allowedOrigins = [`http://localhost:${PORT}`];
+const allowedOrigins = [`http://localhost:${PORT}`, '*'];
 const corsOptions = {
     // origin: true,
     origin: allowedOrigins,
@@ -19,6 +20,7 @@ app.use((0, cors_1.default)(corsOptions));
 app.options(allowedOrigins, (0, cors_1.default)());
 app.use(express_1.default.json());
 app.use('/users', usersRoutes_1.router);
+app.use('/images', imagesRoutes_1.router);
 app.get('/', (req, res) => {
     res.send(`Reached cors-enabled site in ${process.env.NODE_ENV}`);
 });

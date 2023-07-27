@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express'
 import cors from 'cors'
 import 'dotenv/config'
 import { router as usersRouter } from './routes/usersRoutes'
+import { router as imagesRouter } from './routes/imagesRoutes'
 
 export interface RequestWithBody extends Request {
   body: { [key: string]: string | undefined }
@@ -10,7 +11,7 @@ export interface RequestWithBody extends Request {
 const app = express()
 const PORT = process.env.PORT || 3000
 
-const allowedOrigins: string[] = [`http://localhost:${PORT}`]
+const allowedOrigins: string[] = [`http://localhost:${PORT}`, '*']
 
 const corsOptions: cors.CorsOptions = {
   // origin: true,
@@ -20,8 +21,10 @@ const corsOptions: cors.CorsOptions = {
 
 app.use(cors(corsOptions))
 app.options(allowedOrigins, cors())
+
 app.use(express.json())
 app.use('/users', usersRouter)
+app.use('/images', imagesRouter)
 
 app.get('/', (req: Request, res: Response) => {
   res.send(`Reached cors-enabled site in ${process.env.NODE_ENV}`)
