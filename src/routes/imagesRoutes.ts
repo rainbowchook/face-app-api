@@ -3,6 +3,6 @@ import { handleImageApiCall } from '../controllers'
 
 const router = Router()
 
-router.use('/', handleImageApiCall())
+router.post('/', handleImageApiCall())
 
 export { router }

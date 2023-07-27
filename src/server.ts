@@ -11,16 +11,17 @@ export interface RequestWithBody extends Request {
 const app = express()
 const PORT = process.env.PORT || 3000
 
-const allowedOrigins: string[] = [`http://localhost:${PORT}`, '*']
+// const allowedOrigins: string[] = [`http://localhost:${PORT}`, '*']
 
 const corsOptions: cors.CorsOptions = {
-  // origin: true,
-  origin: allowedOrigins,
+  origin: true,
+  // origin: allowedOrigins,
   optionsSuccessStatus: 200,
 }
 
 app.use(cors(corsOptions))
-app.options(allowedOrigins, cors())
+// app.options(allowedOrigins, cors())
+app.use('*', cors(corsOptions))
 
 app.use(express.json())
 app.use('/users', usersRouter)
