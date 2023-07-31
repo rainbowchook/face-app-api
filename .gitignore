@@ -1,2 +1,7 @@
 .env
 /node_modules
+/src copy
+/src_backup
+/build
+*old*
+*copy*
