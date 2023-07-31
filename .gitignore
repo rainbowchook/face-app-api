@@ -3,3 +3,5 @@
 /src copy
 /src_backup
 /build
+*old*
+*copy*
