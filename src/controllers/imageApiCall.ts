@@ -2,27 +2,39 @@ import { Response } from 'express'
 import { RequestWithBody } from '../server'
 import { grpc } from 'clarifai-nodejs-grpc'
 import service from 'clarifai-nodejs-grpc/proto/clarifai/api/service_pb'
-import resources from 'clarifai-nodejs-grpc/proto/clarifai/api/resources_pb'
+import resources, { Concept } from 'clarifai-nodejs-grpc/proto/clarifai/api/resources_pb'
 import { StatusCode } from 'clarifai-nodejs-grpc/proto/clarifai/api/status/status_code_pb'
 import { V2Client } from 'clarifai-nodejs-grpc/proto/clarifai/api/service_grpc_pb'
 
-const MODEL_ID = 'face-detection'
-const CLARIFAI_API_KEY = process.env.CLARIFAI_API_KEY
+// const CLARIFAI_API_KEY = process.env.CLARIFAI_API_KEY!
+const CLARIFAI_PAT_KEY = process.env.CLARIFAI_PAT_KEY!
+const CLARIFAI_USER_ID = process.env.CLARIFAI_USER_ID!
+const CLARIFAI_APP_ID = process.env.CLARIFAI_APP_ID!
+
+const WORKFLOW_ID = 'workflow-62943a';
 
 type BoundingBox = {
-  bottomRow: number
-  leftCol: number
-  rightCol: number
-  topRow: number
+  bottomRow: number,
+  leftCol: number,
+  rightCol: number,
+  topRow: number,
 }
+
+type Sentiment = {
+  name: string,
+  value: number,
+}
+
+type BoxSentiment = { box: BoundingBox, sentiments: Sentiment[] }
 
 const clarifai = new V2Client(
   'api.clarifai.com',
   grpc.ChannelCredentials.createSsl()
 )
 
+// This will be used by every Clarifai endpoint call
 const metadata = new grpc.Metadata()
-metadata.set('authorization', `Key ${CLARIFAI_API_KEY}`)
+metadata.set('authorization', `Key ${CLARIFAI_PAT_KEY}`)
 
 export const handleImageApiCall =
   () => (req: RequestWithBody, res: Response) => {
@@ -31,21 +43,22 @@ export const handleImageApiCall =
     if (!imageUrl) {
       return res.status(400).json('No image submitted')
     }
-    const request = new service.PostModelOutputsRequest()
-    // This is the model ID of a publicly available General model. You may use any other public or custom model ID.
-    // request.setModelId('aaa03c23b3724a16a56b629203edc62c') //general detection mode
-    // request.setModelId('face-sentiment-recognition')
-    request.setModelId(MODEL_ID)
+    const request = new service.PostWorkflowResultsRequest()
+    request.setUserAppId(
+      new resources.UserAppIDSet()
+        .setUserId(CLARIFAI_USER_ID)
+        .setAppId(CLARIFAI_APP_ID)
+    )
+    request.setWorkflowId(WORKFLOW_ID)
+    request.setOutputConfig()
     request.addInputs(
       new resources.Input().setData(
         new resources.Data().setImage(
           new resources.Image().setUrl(imageUrl)
-          // .setUrl("https://samples.clarifai.com/dog2.jpeg")
         )
       )
     )
-
-    clarifai.postModelOutputs(request, metadata, (error, response) => {
+    clarifai.postWorkflowResults(request, metadata, (error, response) => {
       if (error) {
         console.log('1: ' + error)
         return res.status(500).json(error.message)
@@ -57,68 +70,44 @@ export const handleImageApiCall =
       }
 
       if (response.getStatus()?.getCode() !== StatusCode.SUCCESS) {
-        // throw "Error: " + response.getStatus();
-        return res.status(400).json('Make sure image url exists')
-        // .json('Make sure image url exists ' + response.getStatus())
-      }
-      //type guard - not working?
-      if (response.getOutputsList()[0].getData() === undefined) {
-        console.log('2.2: ' + error)
-        return res.status(500).json('Unable to process the image')
+        console.log('status: ', response.getStatus())
+        if(response.getStatus()?.getCode() === 21200 || response.getStatus()?.getDescription() === 'Model does not exist') {
+          return res.status(500).json("Post workflow results failed, status: " + response.getStatus()?.getDescription())
+        }
+        return res.status(400).json('Make sure image url exists' + response.getStatus())
       }
 
-      console.log('Predicted concepts, with confidence values:')
-      // for (const concept of response
-      //   .getOutputsList()[0]
-      //   .getData()
-      //   .getConceptsList()) {
-      //   console.log(concept.getName() + ' ' + concept.getValue())
-      // }
-      // res.json(response.getOutputsList()[0].getData()?.getConceptsList())
-
-      // const boundingBox = response
-      //   .getOutputsList()[0]
-      //   .getData()
-      //   ?.getRegionsList()[0]
-      //   .getRegionInfo()
-      //   ?.getBoundingBox()
-
-      // if (boundingBox === undefined) {
-      //   return res
-      //     .status(500)
-      //     .json('Unable to process image: Bounding box undefined')
-      // }
-
-      const regionsList = response
-        .getOutputsList()[0]
-        .getData()
-        ?.getRegionsList()
+      const results = response.getResultsList()[0]
+      const output = results.getOutputsList()[2]
+      const model = output.getModel()
+      console.log('model: ', model?.getId())
+      
+      const regionsList = output.getData()?.getRegionsList()
       const boundingBoxes = regionsList?.map(
-        (region: resources.Region): BoundingBox => {
-          //region.getRegionInfo()?.getBoundingBox()
+        (region: resources.Region): BoxSentiment => {
           const boundingBox = region.getRegionInfo()?.getBoundingBox()!
-
-          // if (boundingBox === undefined) {
-          //   return res
-          //     .status(500)
-          //     .json('Unable to process image: Bounding box undefined')
-          // }
           const boundingBoxObj: BoundingBox = {
             bottomRow: boundingBox.getBottomRow(),
             leftCol: boundingBox.getLeftCol(),
             rightCol: boundingBox.getRightCol(),
             topRow: boundingBox.getTopRow(),
           }
-          return boundingBoxObj
+
+          const conceptsList = region.getData()?.getConceptsList()!
+          const sentiments = conceptsList?.map((concept: resources.Concept): Sentiment => (
+            {
+              name: concept.getName(),
+              value: concept.getValue()
+            }
+          ))
+          return { box: boundingBoxObj, sentiments }
         }
       )
-      console.log(boundingBoxes)
-      // res.json(response.getOutputsList()[0].getData()?.getRegionsList()[0].getRegionInfo()?.getBoundingBox()?.getBottomRow())
-      // res.json(response.getOutputsList()[0].getData()?.getRegionsList())
+      // console.log(boundingBoxes)
       boundingBoxes
         ? res.json(boundingBoxes)
         : res.status(400).json('No regions detected')
-    })
+    }) 
   }
 
 //https://github.com/Clarifai/clarifai-nodejs-grpc/blob/master/tests/test_integration.js
