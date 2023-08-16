@@ -32,7 +32,7 @@ const handleImageApiCall = () => (req, res) => {
     request.setOutputConfig();
     request.addInputs(new resources_pb_1.default.Input().setData(new resources_pb_1.default.Data().setImage(new resources_pb_1.default.Image().setUrl(imageUrl))));
     clarifai.postWorkflowResults(request, metadata, (error, response) => {
-        var _a, _b, _c, _d, _e;
+        var _a, _b, _c, _d, _e, _f;
         if (error) {
             console.log('1: ' + error);
             return res.status(500).json(error.message);
@@ -44,16 +44,23 @@ const handleImageApiCall = () => (req, res) => {
         }
         if (((_a = response.getStatus()) === null || _a === void 0 ? void 0 : _a.getCode()) !== status_code_pb_1.StatusCode.SUCCESS) {
             console.log('status: ', response.getStatus());
-            if (((_b = response.getStatus()) === null || _b === void 0 ? void 0 : _b.getCode()) === 21200 || ((_c = response.getStatus()) === null || _c === void 0 ? void 0 : _c.getDescription()) === 'Model does not exist') {
-                return res.status(500).json("Post workflow results failed, status: " + ((_d = response.getStatus()) === null || _d === void 0 ? void 0 : _d.getDescription()));
+            if (((_b = response.getStatus()) === null || _b === void 0 ? void 0 : _b.getCode()) === 21200 ||
+                ((_c = response.getStatus()) === null || _c === void 0 ? void 0 : _c.getDescription()) === 'Model does not exist') {
+                return res
+                    .status(500)
+                    .json('Post workflow results failed, status: ' +
+                    ((_d = response.getStatus()) === null || _d === void 0 ? void 0 : _d.getDescription()));
             }
-            return res.status(400).json('Make sure image url exists' + response.getStatus());
+            return res
+                .status(400)
+                .json('Make sure image url exists' +
+                ((_e = response.getStatus()) === null || _e === void 0 ? void 0 : _e.getDescription()));
         }
         const results = response.getResultsList()[0];
         const output = results.getOutputsList()[2];
         const model = output.getModel();
         console.log('model: ', model === null || model === void 0 ? void 0 : model.getId());
-        const regionsList = (_e = output.getData()) === null || _e === void 0 ? void 0 : _e.getRegionsList();
+        const regionsList = (_f = output.getData()) === null || _f === void 0 ? void 0 : _f.getRegionsList();
         const boundingBoxes = regionsList === null || regionsList === void 0 ? void 0 : regionsList.map((region) => {
             var _a, _b;
             const boundingBox = (_a = region.getRegionInfo()) === null || _a === void 0 ? void 0 : _a.getBoundingBox();
@@ -66,7 +73,7 @@ const handleImageApiCall = () => (req, res) => {
             const conceptsList = (_b = region.getData()) === null || _b === void 0 ? void 0 : _b.getConceptsList();
             const sentiments = conceptsList === null || conceptsList === void 0 ? void 0 : conceptsList.map((concept) => ({
                 name: concept.getName(),
-                value: concept.getValue()
+                value: concept.getValue(),
             }));
             return { box: boundingBoxObj, sentiments };
         });

@@ -16,6 +16,7 @@ const PORT = process.env.PORT || 3000
 const corsOptions: cors.CorsOptions = {
   origin: true,
   // origin: allowedOrigins,
+  methods: ['GET', 'PUT', 'POST'],
   optionsSuccessStatus: 200,
 }
 

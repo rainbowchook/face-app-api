@@ -14,6 +14,7 @@ const PORT = process.env.PORT || 3000;
 const corsOptions = {
     origin: true,
     // origin: allowedOrigins,
+    methods: ['GET', 'PUT', 'POST'],
     optionsSuccessStatus: 200,
 };
 app.use((0, cors_1.default)(corsOptions));

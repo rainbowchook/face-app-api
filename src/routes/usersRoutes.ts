@@ -1,13 +1,13 @@
 import { Router, Request, Response, NextFunction } from 'express'
 // import { RequestWithBody } from '../server'
 import { pg } from '../database'
-import { 
-  handleSignin, 
-  handleRegister, 
-  handleProfile, 
-  handleUsers, 
-  handleImage, 
-  handleRemoveUser 
+import {
+  handleSignin,
+  handleRegister,
+  handleProfile,
+  handleUsers,
+  handleImage,
+  handleRemoveUser,
 } from '../controllers'
 
 const router = Router()
@@ -15,7 +15,8 @@ const router = Router()
 router.post('/signin', handleSignin(pg))
 router.post('/', handleRegister(pg))
 router.get('/:id', handleProfile(pg))
-router.get('/', handleUsers(pg))
+// router.get('/', handleUsers(pg))
+router.get('/', handleUsers())
 router.put('/:id/image', handleImage(pg))
 // router.options('*', getCors())
 router.delete('/:id', handleRemoveUser(pg))

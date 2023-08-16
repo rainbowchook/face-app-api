@@ -10,7 +10,8 @@ exports.router = router;
 router.post('/signin', (0, controllers_1.handleSignin)(database_1.pg));
 router.post('/', (0, controllers_1.handleRegister)(database_1.pg));
 router.get('/:id', (0, controllers_1.handleProfile)(database_1.pg));
-router.get('/', (0, controllers_1.handleUsers)(database_1.pg));
+// router.get('/', handleUsers(pg))
+router.get('/', (0, controllers_1.handleUsers)());
 router.put('/:id/image', (0, controllers_1.handleImage)(database_1.pg));
 // router.options('*', getCors())
 router.delete('/:id', (0, controllers_1.handleRemoveUser)(database_1.pg));
@@ -21,4 +22,4 @@ router.delete('/:id', (0, controllers_1.handleRemoveUser)(database_1.pg));
 /users/ -> GET = users - READ
 /users/:userId/images -> PUT = user - UPDATE (previously /image)
 /users/:userId -> DELETE - DELETE (need app.options preflight for CORS - header not GET/HEAD/POST)
-*/ 
+*/

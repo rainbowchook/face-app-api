@@ -5,7 +5,6 @@ import bcrypt from 'bcryptjs'
 
 export const handleRegister = (pg: Knex) => (req: RequestWithBody, res: Response) => {
   const { name, email, password } = req.body
-  // const { users, logins } = database
   if (name && email && password) {
     bcrypt.hash(password, 10, (err, hash) => {
       if (err) {
@@ -13,7 +12,7 @@ export const handleRegister = (pg: Knex) => (req: RequestWithBody, res: Response
       }
       //Store hash password in DB
       pg.transaction((trx) => {
-        trx
+        return trx
           .insert({ hash, email })
           .into<Login, Pick<Login, 'email'>>('login')
           .returning('email')

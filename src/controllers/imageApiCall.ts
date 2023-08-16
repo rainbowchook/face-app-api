@@ -2,7 +2,9 @@ import { Response } from 'express'
 import { RequestWithBody } from '../server'
 import { grpc } from 'clarifai-nodejs-grpc'
 import service from 'clarifai-nodejs-grpc/proto/clarifai/api/service_pb'
-import resources, { Concept } from 'clarifai-nodejs-grpc/proto/clarifai/api/resources_pb'
+import resources, {
+  Concept,
+} from 'clarifai-nodejs-grpc/proto/clarifai/api/resources_pb'
 import { StatusCode } from 'clarifai-nodejs-grpc/proto/clarifai/api/status/status_code_pb'
 import { V2Client } from 'clarifai-nodejs-grpc/proto/clarifai/api/service_grpc_pb'
 
@@ -11,21 +13,21 @@ const CLARIFAI_PAT_KEY = process.env.CLARIFAI_PAT_KEY!
 const CLARIFAI_USER_ID = process.env.CLARIFAI_USER_ID!
 const CLARIFAI_APP_ID = process.env.CLARIFAI_APP_ID!
 
-const WORKFLOW_ID = 'workflow-62943a';
+const WORKFLOW_ID = 'workflow-62943a'
 
 type BoundingBox = {
-  bottomRow: number,
-  leftCol: number,
-  rightCol: number,
-  topRow: number,
+  bottomRow: number
+  leftCol: number
+  rightCol: number
+  topRow: number
 }
 
 type Sentiment = {
-  name: string,
-  value: number,
+  name: string
+  value: number
 }
 
-type BoxSentiment = { box: BoundingBox, sentiments: Sentiment[] }
+type BoxSentiment = { box: BoundingBox; sentiments: Sentiment[] }
 
 const clarifai = new V2Client(
   'api.clarifai.com',
@@ -53,9 +55,7 @@ export const handleImageApiCall =
     request.setOutputConfig()
     request.addInputs(
       new resources.Input().setData(
-        new resources.Data().setImage(
-          new resources.Image().setUrl(imageUrl)
-        )
+        new resources.Data().setImage(new resources.Image().setUrl(imageUrl))
       )
     )
     clarifai.postWorkflowResults(request, metadata, (error, response) => {
@@ -71,17 +71,30 @@ export const handleImageApiCall =
 
       if (response.getStatus()?.getCode() !== StatusCode.SUCCESS) {
         console.log('status: ', response.getStatus())
-        if(response.getStatus()?.getCode() === 21200 || response.getStatus()?.getDescription() === 'Model does not exist') {
-          return res.status(500).json("Post workflow results failed, status: " + response.getStatus()?.getDescription())
+        if (
+          response.getStatus()?.getCode() === 21200 ||
+          response.getStatus()?.getDescription() === 'Model does not exist'
+        ) {
+          return res
+            .status(500)
+            .json(
+              'Post workflow results failed, status: ' +
+                response.getStatus()?.getDescription()
+            )
         }
-        return res.status(400).json('Make sure image url exists' + response.getStatus())
+        return res
+          .status(400)
+          .json(
+            'Make sure image url exists' +
+              response.getStatus()?.getDescription()
+          )
       }
 
       const results = response.getResultsList()[0]
       const output = results.getOutputsList()[2]
       const model = output.getModel()
       console.log('model: ', model?.getId())
-      
+
       const regionsList = output.getData()?.getRegionsList()
       const boundingBoxes = regionsList?.map(
         (region: resources.Region): BoxSentiment => {
@@ -94,12 +107,12 @@ export const handleImageApiCall =
           }
 
           const conceptsList = region.getData()?.getConceptsList()!
-          const sentiments = conceptsList?.map((concept: resources.Concept): Sentiment => (
-            {
+          const sentiments = conceptsList?.map(
+            (concept: resources.Concept): Sentiment => ({
               name: concept.getName(),
-              value: concept.getValue()
-            }
-          ))
+              value: concept.getValue(),
+            })
+          )
           return { box: boundingBoxObj, sentiments }
         }
       )
@@ -107,7 +120,7 @@ export const handleImageApiCall =
       boundingBoxes
         ? res.json(boundingBoxes)
         : res.status(400).json('No regions detected')
-    }) 
+    })
   }
 
 //https://github.com/Clarifai/clarifai-nodejs-grpc/blob/master/tests/test_integration.js

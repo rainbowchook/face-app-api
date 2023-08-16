@@ -7,7 +7,6 @@ exports.handleRegister = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const handleRegister = (pg) => (req, res) => {
     const { name, email, password } = req.body;
-    // const { users, logins } = database
     if (name && email && password) {
         bcryptjs_1.default.hash(password, 10, (err, hash) => {
             if (err) {
@@ -15,7 +14,7 @@ const handleRegister = (pg) => (req, res) => {
             }
             //Store hash password in DB
             pg.transaction((trx) => {
-                trx
+                return trx
                     .insert({ hash, email })
                     .into('login')
                     .returning('email')

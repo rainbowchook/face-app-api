@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start:build": "tsc -w",
+    "start:build": "npx tsc -w",
     "start:run": "NODE_ENV=development nodemon build/server.js",
     "start:dev": "concurrently npm:start:build npm:start:run",
     "start": "NODE_ENV=production node build/server.js",
@@ -20,7 +20,8 @@
     "@types/knex": "^0.16.1",
     "@types/pg": "^8.10.2",
     "concurrently": "^8.2.0",
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "typescript": "^5.1.6"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
