@@ -7,7 +7,8 @@ const database_1 = require("../database");
 const controllers_1 = require("../controllers");
 const router = (0, express_1.Router)();
 exports.router = router;
-router.post('/signin', (0, controllers_1.handleSignin)(database_1.pg));
+// router.post('/signin', handleSignin(pg))
+router.post('/signin', (0, controllers_1.handleSignin)());
 router.post('/', (0, controllers_1.handleRegister)(database_1.pg));
 router.get('/:id', (0, controllers_1.handleProfile)(database_1.pg));
 // router.get('/', handleUsers(pg))

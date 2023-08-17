@@ -12,7 +12,8 @@ import {
 
 const router = Router()
 
-router.post('/signin', handleSignin(pg))
+// router.post('/signin', handleSignin(pg))
+router.post('/signin', handleSignin())
 router.post('/', handleRegister(pg))
 router.get('/:id', handleProfile(pg))
 // router.get('/', handleUsers(pg))
