@@ -101,3 +101,25 @@ export const updateUserEntriesById = (id: string) => {
       throw err
     })
 }
+
+export const deleteUserById = (id: string) => {
+  try {
+    const userToDelete = pg.transaction((trx) => {
+      return trx
+        .from<User, Pick<User, 'email'>>('users')
+        .where({ id })
+        .del()
+        .returning('email')
+        .then((user) => {
+          return trx<Login, Pick<Login, 'email'>>('login')
+            .where({ email: user[0].email })
+            .del()
+            .returning('email')
+        })
+    })
+    return userToDelete
+  } catch (error) {
+    console.error('Error deleting user data:', error)
+    throw error
+  }
+}

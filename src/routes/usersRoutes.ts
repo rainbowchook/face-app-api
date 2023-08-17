@@ -23,7 +23,8 @@ router.get('/', handleUsers())
 // router.put('/:id/image', handleImage(pg))
 router.put('/:id/image', handleImage())
 // router.options('*', getCors())
-router.delete('/:id', handleRemoveUser(pg))
+// router.delete('/:id', handleRemoveUser(pg))
+router.delete('/:id', handleRemoveUser())
 
 export { router }
 

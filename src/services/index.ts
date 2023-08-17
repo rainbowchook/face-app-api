@@ -6,4 +6,5 @@ export {
   getLoginPasswordByEmail,
   createUserAndLogin,
   updateUserEntriesById,
+  deleteUserById,
 } from './queries'
