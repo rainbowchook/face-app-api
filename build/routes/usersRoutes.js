@@ -7,13 +7,17 @@ const database_1 = require("../database");
 const controllers_1 = require("../controllers");
 const router = (0, express_1.Router)();
 exports.router = router;
+//TODO: middleware function to login with external identity provider ie Auth0; set cookie to end user session on timeout
 // router.post('/signin', handleSignin(pg))
 router.post('/signin', (0, controllers_1.handleSignin)());
-router.post('/', (0, controllers_1.handleRegister)(database_1.pg));
-router.get('/:id', (0, controllers_1.handleProfile)(database_1.pg));
+// router.post('/', handleRegister(pg))
+router.post('/', (0, controllers_1.handleRegister)());
+// router.get('/:id', handleProfile(pg))
+router.get('/:id', (0, controllers_1.handleProfile)());
 // router.get('/', handleUsers(pg))
 router.get('/', (0, controllers_1.handleUsers)());
-router.put('/:id/image', (0, controllers_1.handleImage)(database_1.pg));
+// router.put('/:id/image', handleImage(pg))
+router.put('/:id/image', (0, controllers_1.handleImage)());
 // router.options('*', getCors())
 router.delete('/:id', (0, controllers_1.handleRemoveUser)(database_1.pg));
 /*

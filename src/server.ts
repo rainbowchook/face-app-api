@@ -33,7 +33,7 @@ app.get('/', (req: Request, res: Response) => {
 })
 
 app.listen(PORT, () => console.log(`Server listening on ${PORT}`))
-console.log('hi there')
+// console.log('hi there')
 
 /*
 NEW ROUTES (RESTful convention for CRUD operations):

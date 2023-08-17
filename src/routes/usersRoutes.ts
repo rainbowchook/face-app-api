@@ -11,14 +11,17 @@ import {
 } from '../controllers'
 
 const router = Router()
-
+//TODO: middleware function to login with external identity provider ie Auth0; set cookie to end user session on timeout
 // router.post('/signin', handleSignin(pg))
 router.post('/signin', handleSignin())
-router.post('/', handleRegister(pg))
-router.get('/:id', handleProfile(pg))
+// router.post('/', handleRegister(pg))
+router.post('/', handleRegister())
+// router.get('/:id', handleProfile(pg))
+router.get('/:id', handleProfile())
 // router.get('/', handleUsers(pg))
 router.get('/', handleUsers())
-router.put('/:id/image', handleImage(pg))
+// router.put('/:id/image', handleImage(pg))
+router.put('/:id/image', handleImage())
 // router.options('*', getCors())
 router.delete('/:id', handleRemoveUser(pg))
 

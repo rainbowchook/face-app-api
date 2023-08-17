@@ -41,9 +41,10 @@ const handleSignin = () => (req, res) => {
                         (0, queries_1.getUserByEmail)(user[0].email)
                             .then((userData) => {
                             console.log('User Data:', userData);
-                            const returnUser = Object.assign({}, userData[0]);
+                            // const returnUser: Partial<User> = { ...userData[0] }
                             // delete returnUser.hash
-                            res.json(returnUser);
+                            // res.json(returnUser)
+                            res.json(userData[0]);
                         })
                             .catch((error) => {
                             console.error('Error:', error);

@@ -27,7 +27,7 @@ app.get('/', (req, res) => {
     res.send(`Reached cors-enabled site in ${process.env.NODE_ENV}`);
 });
 app.listen(PORT, () => console.log(`Server listening on ${PORT}`));
-console.log('hi there');
+// console.log('hi there')
 /*
 NEW ROUTES (RESTful convention for CRUD operations):
 / -> GET res = this is working
