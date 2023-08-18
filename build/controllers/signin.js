@@ -5,23 +5,25 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handleSignin = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
-const handleSignin = (pg) => (req, res) => {
+const queries_1 = require("../services/queries");
+const handleSignin = () => (req, res) => {
     const { email, password } = req.body;
     if (email && password) {
-        pg('login')
-            .where({ email })
+        (0, queries_1.getLoginByEmail)(email)
             .then((user) => {
-            console.log(user);
-            if (user[0]) {
+            if (user.length && user[0]) {
                 bcryptjs_1.default.compare(password, user[0].hash, (err, success) => {
                     if (success) {
-                        const returnUser = Object.assign({}, user[0]);
-                        delete returnUser.hash;
-                        res.json(returnUser);
+                        (0, queries_1.getUserByEmail)(user[0].email)
+                            .then((userData) => res.json(userData[0]))
+                            .catch((error) => {
+                            console.error('Error:', error);
+                            throw new Error('Error signing in:' + error);
+                        });
                     }
                     else {
-                        console.log(err);
-                        res.status(400).json('Invalid credentials');
+                        console.error(err);
+                        throw new Error('Invalid credentials:' + err);
                     }
                 });
             }
@@ -29,13 +31,10 @@ const handleSignin = (pg) => (req, res) => {
                 res.status(400).json('Incorrect email or password');
             }
         })
-            .catch((err) => {
-            console.log(err);
-            res.status(400).json('Invalid email or password');
-        });
+            .catch((error) => res.status(400).json(error));
     }
     else {
-        res.status(400).json('error logging in');
+        res.status(400).json('Error: Please enter Email and Password');
     }
 };
 exports.handleSignin = handleSignin;
