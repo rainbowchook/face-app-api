@@ -1,4 +1,4 @@
-import { pg, User, Login } from '../database'
+import { pg, User, Login } from './database'
 
 export const getUsers = () => {
   return pg<User>('users')
