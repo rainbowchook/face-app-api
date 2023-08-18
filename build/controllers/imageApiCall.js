@@ -20,7 +20,7 @@ const metadata = new clarifai_nodejs_grpc_1.grpc.Metadata();
 metadata.set('authorization', `Key ${CLARIFAI_PAT_KEY}`);
 const handleImageApiCall = () => (req, res) => {
     const { imageUrl } = req.body;
-    console.log(imageUrl);
+    console.log('imageUrl:', imageUrl);
     if (!imageUrl) {
         return res.status(400).json('No image submitted');
     }
@@ -34,16 +34,16 @@ const handleImageApiCall = () => (req, res) => {
     clarifai.postWorkflowResults(request, metadata, (error, response) => {
         var _a, _b, _c, _d, _e, _f;
         if (error) {
-            console.log('1: ' + error);
+            console.error(error);
             return res.status(500).json(error.message);
         }
         //type guard
         if (response.getStatus() === undefined) {
-            console.log('2.1: ' + error);
+            console.error(error);
             return res.status(500).json('Unable to process image');
         }
         if (((_a = response.getStatus()) === null || _a === void 0 ? void 0 : _a.getCode()) !== status_code_pb_1.StatusCode.SUCCESS) {
-            console.log('status: ', response.getStatus());
+            console.log('Response status: ', response.getStatus());
             if (((_b = response.getStatus()) === null || _b === void 0 ? void 0 : _b.getCode()) === 21200 ||
                 ((_c = response.getStatus()) === null || _c === void 0 ? void 0 : _c.getDescription()) === 'Model does not exist') {
                 return res
@@ -77,7 +77,6 @@ const handleImageApiCall = () => (req, res) => {
             }));
             return { box: boundingBoxObj, sentiments };
         });
-        // console.log(boundingBoxes)
         boundingBoxes
             ? res.json(boundingBoxes)
             : res.status(400).json('No regions detected');

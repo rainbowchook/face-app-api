@@ -2,9 +2,7 @@ import { Response } from 'express'
 import { RequestWithBody } from '../server'
 import { grpc } from 'clarifai-nodejs-grpc'
 import service from 'clarifai-nodejs-grpc/proto/clarifai/api/service_pb'
-import resources, {
-  Concept,
-} from 'clarifai-nodejs-grpc/proto/clarifai/api/resources_pb'
+import resources from 'clarifai-nodejs-grpc/proto/clarifai/api/resources_pb'
 import { StatusCode } from 'clarifai-nodejs-grpc/proto/clarifai/api/status/status_code_pb'
 import { V2Client } from 'clarifai-nodejs-grpc/proto/clarifai/api/service_grpc_pb'
 
@@ -41,7 +39,7 @@ metadata.set('authorization', `Key ${CLARIFAI_PAT_KEY}`)
 export const handleImageApiCall =
   () => (req: RequestWithBody, res: Response) => {
     const { imageUrl } = req.body
-    console.log(imageUrl)
+    console.log('imageUrl:', imageUrl)
     if (!imageUrl) {
       return res.status(400).json('No image submitted')
     }
@@ -60,17 +58,17 @@ export const handleImageApiCall =
     )
     clarifai.postWorkflowResults(request, metadata, (error, response) => {
       if (error) {
-        console.log('1: ' + error)
+        console.error(error)
         return res.status(500).json(error.message)
       }
       //type guard
       if (response.getStatus() === undefined) {
-        console.log('2.1: ' + error)
+        console.error(error)
         return res.status(500).json('Unable to process image')
       }
 
       if (response.getStatus()?.getCode() !== StatusCode.SUCCESS) {
-        console.log('status: ', response.getStatus())
+        console.log('Response status: ', response.getStatus())
         if (
           response.getStatus()?.getCode() === 21200 ||
           response.getStatus()?.getDescription() === 'Model does not exist'
@@ -116,7 +114,6 @@ export const handleImageApiCall =
           return { box: boundingBoxObj, sentiments }
         }
       )
-      // console.log(boundingBoxes)
       boundingBoxes
         ? res.json(boundingBoxes)
         : res.status(400).json('No regions detected')

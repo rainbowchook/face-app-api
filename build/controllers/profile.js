@@ -6,22 +6,6 @@ const handleProfile = () => (req, res) => {
     const { id } = req.params;
     (0, services_1.getUserByID)(id)
         .then((user) => res.json(user))
-        .catch((err) => res.status(500).json('Unable to find user ' + err));
+        .catch((error) => res.status(500).json('Unable to find user: ' + error));
 };
 exports.handleProfile = handleProfile;
-// export const handleProfileOld = (pg: Knex) => (req: Request, res: Response) => {
-//   const { id } = req.params
-//   // const { users } = database
-//   pg<User>('users')
-//     .select('*')
-//     .where({ id })
-//     .then((user) => {
-//       console.log(user)
-//       if (user && user.length) {
-//         res.json(user[0])
-//       } else {
-//         res.status(400).json('Not found')
-//       }
-//     })
-//     .catch((err) => res.status(500).json('Unable to find user ' + err))
-// }

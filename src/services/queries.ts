@@ -31,9 +31,7 @@ export const getUserByEmail = (email: string) => {
 }
 
 export const getLoginByEmail = (email: string) => {
-  return pg
-    .select()
-    .from<Login>('login')
+  return pg<Login>('login')
     .where({ email })
     .then((login) => login)
     .catch((error) => {
@@ -42,10 +40,10 @@ export const getLoginByEmail = (email: string) => {
     })
 }
 
-export const getLoginPasswordByEmail = (email: string) => {
+export const getLoginHashByEmail = (email: string) => {
   return pg
     .select()
-    .from<Login>('login')
+    .from<Login, Pick<Login, 'hash'>>('login')
     .where({ email })
     .returning('hash')
     .then((loginPassword) => loginPassword)
@@ -77,10 +75,7 @@ export const createUserAndLogin = (
             .returning('*')
         })
     })
-    .then((users) => {
-      console.log(users)
-      return users
-    })
+    .then((users) => users)
     .catch((error) => {
       console.error('Error inserting user: ', error)
       throw error
@@ -92,10 +87,7 @@ export const updateUserEntriesById = (id: string) => {
     .where({ id })
     .increment('entries', 1)
     .returning('entries')
-    .then((entries) => {
-      console.log(entries)
-      return entries
-    })
+    .then((user) => user)
     .catch((err) => {
       console.error('Error updating user entries count: ', err)
       throw err
@@ -103,8 +95,8 @@ export const updateUserEntriesById = (id: string) => {
 }
 
 export const deleteUserById = (id: string) => {
-  try {
-    const userToDelete = pg.transaction((trx) => {
+  return pg
+    .transaction((trx) => {
       return trx
         .from<User, Pick<User, 'email'>>('users')
         .where({ id })
@@ -117,9 +109,9 @@ export const deleteUserById = (id: string) => {
             .returning('email')
         })
     })
-    return userToDelete
-  } catch (error) {
-    console.error('Error deleting user data:', error)
-    throw error
-  }
+    .then((userToDelete) => userToDelete)
+    .catch((error) => {
+      console.error('Error deleting user data:', error)
+      throw error
+    })
 }

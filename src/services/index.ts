@@ -3,7 +3,7 @@ export {
   getUserByID,
   getUserByEmail,
   getLoginByEmail,
-  getLoginPasswordByEmail,
+  getLoginHashByEmail,
   createUserAndLogin,
   updateUserEntriesById,
   deleteUserById,

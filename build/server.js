@@ -27,7 +27,6 @@ app.get('/', (req, res) => {
     res.send(`Reached cors-enabled site in ${process.env.NODE_ENV}`);
 });
 app.listen(PORT, () => console.log(`Server listening on ${PORT}`));
-// console.log('hi there')
 /*
 NEW ROUTES (RESTful convention for CRUD operations):
 / -> GET res = this is working
@@ -36,8 +35,8 @@ NEW ROUTES (RESTful convention for CRUD operations):
 /users/:userId -> GET = user - READ
 /users/ -> GET = users - READ
 /users/:userId/images -> PUT = user - UPDATE (previously /image)
-TODO /users/:userId -> DELETE - DELETE (need app.options preflight for CORS - header not GET/HEAD/POST)
-TODO /images/ -> POST - Make API call with image; returns JSON results
+/users/:userId -> DELETE - DELETE (need app.options preflight for CORS - header not GET/HEAD/POST)
+/images/ -> POST - Make API call with image; returns JSON results
 
 OLD ROUTES:
 / -> GET res = this is working
