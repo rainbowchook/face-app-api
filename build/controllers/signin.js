@@ -14,10 +14,8 @@ const handleSignin = () => (req, res) => {
             if (user.length && user[0]) {
                 bcryptjs_1.default.compare(password, user[0].hash, (err, success) => {
                     if (success) {
-                        console.log('after getLoginByEmail, before getUserByEmail', user[0].email);
                         (0, queries_1.getUserByEmail)(user[0].email)
                             .then((userData) => {
-                            console.log('after getLoginByEmail, after getUserByEmail, in then block', user[0].email, userData);
                             userData.length && userData[0]
                                 ? res.json(userData[0])
                                 : res
