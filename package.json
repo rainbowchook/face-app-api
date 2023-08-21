@@ -4,7 +4,8 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start:build": "npx tsc -w",
+    "build": "tsc",
+    "start:build": "tsc -w",
     "start:run": "NODE_ENV=development nodemon build/server.js",
     "start:dev": "concurrently npm:start:build npm:start:run",
     "start": "NODE_ENV=production node build/server.js",
