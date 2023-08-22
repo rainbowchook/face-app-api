@@ -1,8 +1,8 @@
 version: '3.4'
 
 services:
-  faceappapi:
-    image: faceappapi
+  server:
+    image: 'rainbowchook/faces-app-api:latest'
     build:
       context: .
       dockerfile: ./Dockerfile
