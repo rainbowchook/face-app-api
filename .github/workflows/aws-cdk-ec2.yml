@@ -1,0 +1,29 @@
+name: CDK Deployment Workflow
+
+on:
+  workflow_run:
+    workflows: ["Docker Compose Worflow"]
+    types:
+      - completed
+jobs:
+  deploy-cdk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up NodeJS
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install CDK dependencies
+        run: npm install -g aws-cdk
+
+      - name: Deploy CDK stack
+        run: cdk deploy faces-cdk-project-stack --require-approval never
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          
