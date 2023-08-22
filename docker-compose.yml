@@ -1,0 +1,44 @@
+version: '3.4'
+
+networks:
+  myapp:
+
+services:
+  db:
+    container_name: postgres
+    image: 'postgres:latest'
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./postgres/init-scripts:/docker-entrypoint-initdb.d
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - myapp
+    ports:
+      - '5432:5432'
+
+  server:
+    container_name: faces
+    image: 'rainbowchook/faces-app-api:latest'
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: ${PORT}
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/%{DB_NAME}
+      CLARIFAI_API_KEY: ${CLARIFAI_API_KEY}
+      CLARIFAI_PAT_KEY: ${CLARIFAI_PAT_KEY}
+      CLARIFAI_USER_ID: ${CLARIFAI_USER_ID}
+      CLARIFAI_APP_ID: ${CLARIFAI_APP_ID}
+    networks:
+      - myapp
+    ports:
+      - '${PORT}:${PORT}'
+    depends_on:
+      - db
+
+volumes:
+  db-data:
