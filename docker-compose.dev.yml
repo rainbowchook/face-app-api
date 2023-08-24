@@ -22,6 +22,9 @@ services:
   server:
     container_name: faces
     image: 'rainbowchook/faces-app-api:latest'
+    build:
+      context: .
+      dockerfile: ./Dockerfile
     environment:
       NODE_ENV: production
       PORT: ${PORT}
