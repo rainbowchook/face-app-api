@@ -28,7 +28,7 @@ export default class EC2SpotInstance extends Construct {
     resource: { vpc: IVpc; serverRole: Role; serverSG: ISecurityGroup }
   ) {
     super(scope, id)
-    const appEC2SpotInstance = new Instance(this, 'ec2-spot-instance', {
+    const appEC2SpotInstance = new SpotInstance(this, 'ec2-spot-instance', {
       vpc: resource.vpc,
       vpcSubnets: {
         subnetType: SubnetType.PUBLIC,
@@ -39,11 +39,13 @@ export default class EC2SpotInstance extends Construct {
         InstanceClass.BURSTABLE2,
         InstanceSize.MICRO
       ),
-      machineImage: new AmazonLinuxImage({
-        generation: AmazonLinuxGeneration.AMAZON_LINUX_2,
-        cpuType: AmazonLinuxCpuType.X86_64,
-      }),
+      machineImage: MachineImage.latestAmazonLinux2(),
+      // new AmazonLinuxImage({
+      //   generation: AmazonLinuxGeneration.AMAZON_LINUX_2,
+      //   cpuType: AmazonLinuxCpuType.X86_64,
+      // }),
       keyName: 'faces-keypair',
+      spotOptions: launchTemplateSpotOptions
     })
     this.ec2SpotInstance = appEC2SpotInstance
     

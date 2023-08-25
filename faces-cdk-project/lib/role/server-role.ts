@@ -10,6 +10,7 @@ export default class ServerRole extends Construct {
       managedPolicies: [
         ManagedPolicy.fromAwsManagedPolicyName('AmazonS3ReadOnlyACcess'),
       ],
+      
     })
   }
 }
