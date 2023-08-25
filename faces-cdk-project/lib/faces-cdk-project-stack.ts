@@ -1,17 +1,9 @@
-import { readFileSync } from 'node:fs'
+// import { readFileSync } from 'node:fs'
 import * as path from 'node:path'
 
 import * as cdk from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import {
-  Instance,
-  LaunchTemplate,
-  SpotRequestType,
-  Vpc,
-  SubnetType,
-  SecurityGroup,
-  UserData,
-} from 'aws-cdk-lib/aws-ec2'
+import { UserData } from 'aws-cdk-lib/aws-ec2'
 import * as s3Assets from 'aws-cdk-lib/aws-s3-assets'
 import DefaultVpc from './vpc/default-vpc'
 import ServerSecurityGroup from './security-group/security-group'
@@ -26,7 +18,7 @@ export class FacesCdkProjectStack extends cdk.Stack {
     const dockerComposeAsset = new s3Assets.Asset(this, 'DockerComposeAsset', {
       path: path.join(__dirname, '/assets/docker_compose.yml'),
     })
-   
+
     // Create VPC in which to launch EC2 spot instance
     const { vpc } = new DefaultVpc(scope, id)
 
@@ -58,7 +50,7 @@ export class FacesCdkProjectStack extends cdk.Stack {
       'sudo amazon-linux-extras install docker -y',
       'sudo service docker start'
     )
-    
+
     // Switch user to ec2-user and Create the /APP directory
     userData.addCommands('sudo -i -u ec2-user && mkdir /home/ec2-user/APP')
 
@@ -66,11 +58,13 @@ export class FacesCdkProjectStack extends cdk.Stack {
     const dockerComposeLocalPath = userData.addS3DownloadCommand({
       bucket: dockerComposeAsset.bucket,
       bucketKey: dockerComposeAsset.s3ObjectKey,
-      localFile: '/home/ec2-user/APP/docker-compose.yml'
+      localFile: '/home/ec2-user/APP/docker-compose.yml',
     })
 
-    // Execute docker-compose 
-    userData.addCommands(`docker-compose -f ${dockerComposeLocalPath} up -d`)
+    // Execute docker-compose and 1) pipe standard output to log file; 2) pipe standard error to same file
+    userData.addCommands(
+      `docker-compose -f ${dockerComposeLocalPath} up -d > /home/ec2-user/docker-compose.log 2>&1`
+    )
 
     // ec2SpotInstance.userData.addCommands(userData.render())
     ec2SpotInstance.addUserData(userData.render())
