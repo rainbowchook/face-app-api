@@ -1,5 +1,3 @@
-import * as path from "node:path";
-
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import type { InstanceProps, LaunchTemplateSpotOptions } from "aws-cdk-lib/aws-ec2";
@@ -10,7 +8,7 @@ import ServerSecurityGroup from "./security-group/security-group";
 import ServerRole from "./role/server-role";
 import EC2SpotInstance from "./instance/ec2-instance";
 import { readFileSync } from "node:fs";
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
+import * as path from "node:path";
 
 export class FacesCdkProjectStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
