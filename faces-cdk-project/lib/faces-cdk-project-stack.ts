@@ -16,7 +16,7 @@ export class FacesCdkProjectStack extends cdk.Stack {
 
     // Add Docker Compose file as an asset
     const dockerComposeAsset = new s3Assets.Asset(this, 'DockerComposeAsset', {
-      path: path.join(__dirname, '/assets/docker_compose.yml'),
+      path: path.join(__dirname, '/assets/docker-compose.yml'),
     })
 
     // Create VPC in which to launch EC2 spot instance
