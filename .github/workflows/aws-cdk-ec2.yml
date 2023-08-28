@@ -29,5 +29,5 @@ jobs:
           aws configure --profile $AWS_PROFILE set region $AWS_DEFAULT_REGION
 
       - name: Deploy CDK stack
-        run: npx aws-cdk deploy --profile $AWS_PROFILE faces-cdk-project --require-approval never
+        run: npx aws-cdk deploy --profile $AWS_PROFILE FacesCdkProjectStack --require-approval never
           
