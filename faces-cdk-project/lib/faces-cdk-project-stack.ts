@@ -4,7 +4,7 @@ import * as path from 'node:path'
 import * as cdk from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import { UserData } from 'aws-cdk-lib/aws-ec2'
-import * as s3Assets from 'aws-cdk-lib/aws-s3-assets'
+import { Asset } from 'aws-cdk-lib/aws-s3-assets'
 import DefaultVpc from './vpc/default-vpc'
 import ServerSecurityGroup from './security-group/security-group'
 import ServerRole from './role/server-role'
@@ -15,21 +15,23 @@ export class FacesCdkProjectStack extends cdk.Stack {
     super(scope, id, props)
 
     // Add Docker Compose file as an asset
-    const dockerComposeAsset = new s3Assets.Asset(this, 'DockerComposeAsset', {
+    const dockerComposeAsset = new Asset(this, 'DockerComposeAsset', {
       path: path.join(__dirname, '/assets/docker-compose.yml'),
     })
 
     // Create VPC in which to launch EC2 spot instance
-    const { vpc } = new DefaultVpc(scope, id)
+    const { vpc } = new DefaultVpc(this, 'DefaultVPC')
 
     // Create Security Group for EC2 spot instance
-    const { serverSG } = new ServerSecurityGroup(scope, id, { vpc })
+    const { serverSG } = new ServerSecurityGroup(this, 'ServerSecurityGroup', {
+      vpc,
+    })
 
     // Create role for EC2 Spot Instance
-    const { serverRole } = new ServerRole(scope, id)
+    const { serverRole } = new ServerRole(this, 'ServerRole')
 
     // Create EC2 Spot Instance
-    const { ec2SpotInstance } = new EC2SpotInstance(scope, id, {
+    const { ec2SpotInstance } = new EC2SpotInstance(this, 'EC2SpotInstance', {
       vpc,
       serverRole,
       serverSG,
@@ -52,7 +54,9 @@ export class FacesCdkProjectStack extends cdk.Stack {
     )
 
     // Switch user to ec2-user and Create the /APP directory
-    userData.addCommands('sudo -i -u ec2-user && mkdir /home/ec2-user/APP')
+    userData.addCommands(
+      'sudo usermod -aG docker ec2-user && sudo -i -u ec2-user && mkdir /home/ec2-user/APP'
+    )
 
     //Download docker-compose asset from S3 and execute it
     const dockerComposeLocalPath = userData.addS3DownloadCommand({

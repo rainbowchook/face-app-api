@@ -1,7 +1,7 @@
-import { Duration, Expiration } from 'aws-cdk-lib';
+// import { Duration, Expiration } from 'aws-cdk-lib'
 import {
-  AmazonLinuxGeneration,
-  AmazonLinuxImage,
+  // AmazonLinuxGeneration,
+  // AmazonLinuxImage,
   ISecurityGroup,
   IVpc,
   Instance,
@@ -10,7 +10,7 @@ import {
   InstanceSize,
   SubnetType,
   MachineImage,
-  AmazonLinuxCpuType,
+  // AmazonLinuxCpuType,
   InstanceProps,
   LaunchTemplateSpotOptions,
   LaunchTemplate,
@@ -45,10 +45,9 @@ export default class EC2SpotInstance extends Construct {
       //   cpuType: AmazonLinuxCpuType.X86_64,
       // }),
       keyName: 'faces-keypair',
-      spotOptions: launchTemplateSpotOptions
+      spotOptions: launchTemplateSpotOptions,
     })
     this.ec2SpotInstance = appEC2SpotInstance
-    
   }
 }
 
@@ -58,28 +57,27 @@ export interface SpotInstanceProps extends InstanceProps {
    * @default - Use the Launch Template's default InstanceMarketOptions
    */
   readonly spotOptions?: LaunchTemplateSpotOptions
-
 }
 
 const launchTemplateSpotOptions: LaunchTemplateSpotOptions = {
-  blockDuration: Duration.minutes(30),
+  // blockDuration: Duration.hours(2),
   interruptionBehavior: SpotInstanceInterruption.TERMINATE,
   maxPrice: 0.005,
   requestType: SpotRequestType.ONE_TIME,
-  validUntil: Expiration.after(Duration.minutes(30))
+  // validUntil: Expiration.after(Duration.minutes(30)), // Invalid Parameter Combination: validUntil cannot be specified when the SpotRequestType is set to 'one-time';
 }
 
 export class SpotInstance extends Instance {
   constructor(scope: Construct, id: string, props: SpotInstanceProps) {
     super(scope, id, props)
-    
-    const template = new LaunchTemplate(this, "LaunchTemplateForSpotReq", {
-      spotOptions: props.spotOptions ?? {}
+
+    const template = new LaunchTemplate(this, 'LaunchTemplateForSpotReq', {
+      spotOptions: props.spotOptions ?? {},
     })
 
     this.instance.launchTemplate = {
       version: template.versionNumber,
-      launchTemplateId: template.launchTemplateId
+      launchTemplateId: template.launchTemplateId,
     }
   }
 }

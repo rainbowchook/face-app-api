@@ -17,8 +17,12 @@ export default class ServerRole extends Construct {
       assumedBy: new ServicePrincipal('ec2.amazonaws.com'),
       managedPolicies: [
         ManagedPolicy.fromAwsManagedPolicyName('AmazonS3ReadOnlyAccess'),
-        ManagedPolicy.fromManagedPolicyName(scope, id, 'EC2instance'),
-        ManagedPolicy.fromManagedPolicyName(scope, id, 'DockerOps'),
+        ManagedPolicy.fromManagedPolicyName(
+          this,
+          'EC2InstanceRole',
+          'EC2instance'
+        ),
+        ManagedPolicy.fromManagedPolicyName(this, 'DockerOpsRole', 'DockerOps'),
       ],
     })
   }
