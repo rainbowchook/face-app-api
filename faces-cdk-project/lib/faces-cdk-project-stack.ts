@@ -20,6 +20,11 @@ export class FacesCdkProjectStack extends cdk.Stack {
       path: path.join(__dirname, '/assets/docker-compose.yml'),
     })
 
+    // Add postgres init scripts as an asset
+    const postgresInitScriptsAsset = new Asset(this, 'PostgresInitScriptsAsset', {
+      path: path.join(__dirname, '/assets/postgres/init-scripts')
+    })
+
     // Create VPC in which to launch EC2 spot instance
     const { vpc } = new DefaultVpc(this, 'DefaultVPC')
 
@@ -63,13 +68,15 @@ export class FacesCdkProjectStack extends cdk.Stack {
 
     const userData = UserData.forLinux()
 
-    // Install Docker
+    // Install Docker and Docker Compose, grant ec2-user right to execute docker and docker-compose, and create /home/ec2-user/APP directory
     userData.addCommands(
       'sudo yum update -y',
       'sudo amazon-linux-extras install docker -y',
       'sudo service docker start',
+      'sudo usermod -aG docker ec2-user',
       'sudo curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose',
       'sudo chmod +x /usr/local/bin/docker-compose'
+      // 'mkdir -p /home/ec2-user/APP'
     )
 
     // Set environment variables
@@ -90,9 +97,9 @@ export class FacesCdkProjectStack extends cdk.Stack {
     )
 
     // Switch user to ec2-user and Create the /APP directory
-    userData.addCommands(
-      'sudo usermod -aG docker ec2-user && sudo -i -u ec2-user && mkdir /home/ec2-user/APP'
-    )
+    // userData.addCommands(
+    //   'sudo usermod -aG docker ec2-user && sudo -i -u ec2-user && mkdir /home/ec2-user/APP'
+    // )
 
     //Download docker-compose asset from S3 and execute it
     const dockerComposeLocalPath = userData.addS3DownloadCommand({
@@ -101,9 +108,22 @@ export class FacesCdkProjectStack extends cdk.Stack {
       localFile: '/home/ec2-user/APP/docker-compose.yml',
     })
 
+    //Download postgres init-scripts asset from S3 and execute it
+    const postgresInitScriptsLocalPath = userData.addS3DownloadCommand({
+      bucket: postgresInitScriptsAsset.bucket,
+      bucketKey: postgresInitScriptsAsset.s3ObjectKey,
+      localFile: '/home/ec2-user/APP/postgres/init-scripts',
+    })
+
     // Execute docker-compose and 1) pipe standard output to log file; 2) pipe standard error to same file
     userData.addCommands(
       `docker-compose -f ${dockerComposeLocalPath} up -d > /home/ec2-user/APP/docker-compose.log 2>&1`
+    )
+
+    // Recursively change ec2-user group ownership and rwx permissions for /home/ec2-user/APP directory
+    userData.addCommands(
+      'sudo chown -R ec2-user:ec2-user /home/ec2-user/APP',
+      'sudo chmod -R 770 /home/ec2-user/APP'
     )
 
     // ec2SpotInstance.userData.addCommands(userData.render())

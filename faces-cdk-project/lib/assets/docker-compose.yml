@@ -5,7 +5,7 @@ networks:
 
 services:
   db:
-    container_name: postgres
+    container_name: ${DB_HOST}
     image: 'postgres:latest'
     restart: always
     environment:
@@ -33,7 +33,7 @@ services:
     networks:
       - myapp
     ports:
-      - '${PORT}:${PORT}'
+      - '80:${PORT}'
     depends_on:
       - db
 
