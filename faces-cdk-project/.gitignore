@@ -7,6 +7,8 @@ node_modules
 .cdk.staging
 cdk.out
 
+.env
+*setupEnv.sh
 cdk.context.json
 
 faces-cdk-project-stack-works*
