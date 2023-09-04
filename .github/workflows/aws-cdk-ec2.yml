@@ -43,5 +43,5 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PORT: ${{ secrets.PORT }}
-        run: npx aws-cdk deploy --profile $AWS_PROFILE FacesCdkProjectStack --require-approval never
+        run: npx aws-cdk deploy --profile $AWS_PROFILE FacesCdkProjectStack -a ./faces-cdk-project --require-approval never
           
