@@ -8,6 +8,7 @@ services:
     container_name: ${DB_HOST}
     image: 'postgres:latest'
     restart: always
+    command: postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -15,9 +16,16 @@ services:
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
+      #PGUSER env var required for healthcheck - healthcheck fails if unspecified (root user doesn't exist in postgres)
+      PGUSER: "postgres"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
       - ./postgres/init-scripts:/docker-entrypoint-initdb.d
-      - db-data:/var/lib/postgresql/data
+      - postgres:/var/lib/postgresql/data
     networks:
       - myapp
     ports:
@@ -39,7 +47,9 @@ services:
     ports:
       - '80:${PORT}'
     depends_on:
-      - db
+      #prevents issuing a request while server is starting depending on health status of postgres db
+      db:
+        condition: service_healthy
 
 volumes:
-  db-data:
+  postgres:
