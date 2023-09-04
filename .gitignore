@@ -5,3 +5,6 @@
 /build
 *old*
 *copy*
+/logs
+*setupEnv.sh
+*log*

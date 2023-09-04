@@ -1,6 +1,6 @@
-\connect :DB_NAME :DB_USER
+\connect "${DB_NAME}" "${DB_USER}"
 
-CREATE TABLE users (
+CREATE TABLE "${SCHEMA}".users (
   id serial PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
   email text UNIQUE NOT NULL,
@@ -8,7 +8,7 @@ CREATE TABLE users (
   joined TIMESTAMP NOT NULL
 );
 
-CREATE TABLE login (
+CREATE TABLE "${SCHEMA}".login (
   id serial PRIMARY KEY,
   email text UNIQUE NOT NULL,
   hash VARCHAR(100) NOT NULL

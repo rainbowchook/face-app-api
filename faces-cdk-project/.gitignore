@@ -1,0 +1,14 @@
+*.js
+!jest.config.js
+*.d.ts
+node_modules
+
+# CDK asset staging directory
+.cdk.staging
+cdk.out
+
+.env
+*setupEnv.sh
+cdk.context.json
+
+faces-cdk-project-stack-works*
