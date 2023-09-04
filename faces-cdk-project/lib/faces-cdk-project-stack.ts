@@ -15,14 +15,18 @@ export class FacesCdkProjectStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props)
 
+    // Add postgres init scripts as an asset
+    const postgresInitScriptsAsset = new Asset(
+      this,
+      'PostgresInitScriptsAsset',
+      {
+        path: path.join(__dirname, '/assets/postgres/init-scripts'),
+      }
+    )
+
     // Add Docker Compose file as an asset
     const dockerComposeAsset = new Asset(this, 'DockerComposeAsset', {
       path: path.join(__dirname, '/assets/docker-compose.yml'),
-    })
-
-    // Add postgres init scripts as an asset
-    const postgresInitScriptsAsset = new Asset(this, 'PostgresInitScriptsAsset', {
-      path: path.join(__dirname, '/assets/postgres/init-scripts')
     })
 
     // Create VPC in which to launch EC2 spot instance
@@ -76,7 +80,6 @@ export class FacesCdkProjectStack extends cdk.Stack {
       'sudo usermod -aG docker ec2-user',
       'sudo curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose',
       'sudo chmod +x /usr/local/bin/docker-compose'
-      // 'mkdir -p /home/ec2-user/APP'
     )
 
     // Set environment variables
@@ -96,23 +99,24 @@ export class FacesCdkProjectStack extends cdk.Stack {
       `export PORT=${PORT}`
     )
 
-    // Switch user to ec2-user and Create the /APP directory
-    // userData.addCommands(
-    //   'sudo usermod -aG docker ec2-user && sudo -i -u ec2-user && mkdir /home/ec2-user/APP'
-    // )
+    // Download postgres-init-scripts asset from S3 and execute it
+    const postgresInitScriptsLocalPath = userData.addS3DownloadCommand({
+      bucket: postgresInitScriptsAsset.bucket,
+      bucketKey: postgresInitScriptsAsset.s3ObjectKey,
+      localFile: '/home/ec2-user/APP/postgres/postgres-init-scripts.zip',
+    })
 
-    //Download docker-compose asset from S3 and execute it
+    // Unzip contents of postgres-init-scripts.zip into ./postgres/init-scripts
+    userData.addCommands(
+      'mkdir -p /home/ec2-user/APP/postgres/init-scripts',
+      `unzip ${postgresInitScriptsLocalPath} -d /home/ec2-user/APP/postgres/init-scripts`
+    )
+
+    // Download docker-compose asset from S3 and execute it
     const dockerComposeLocalPath = userData.addS3DownloadCommand({
       bucket: dockerComposeAsset.bucket,
       bucketKey: dockerComposeAsset.s3ObjectKey,
       localFile: '/home/ec2-user/APP/docker-compose.yml',
-    })
-
-    //Download postgres init-scripts asset from S3 and execute it
-    const postgresInitScriptsLocalPath = userData.addS3DownloadCommand({
-      bucket: postgresInitScriptsAsset.bucket,
-      bucketKey: postgresInitScriptsAsset.s3ObjectKey,
-      localFile: '/home/ec2-user/APP/postgres/init-scripts',
     })
 
     // Execute docker-compose and 1) pipe standard output to log file; 2) pipe standard error to same file

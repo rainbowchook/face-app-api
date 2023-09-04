@@ -11,6 +11,10 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      SCHEMA: public
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
     volumes:
       - ./postgres/init-scripts:/docker-entrypoint-initdb.d
       - db-data:/var/lib/postgresql/data
