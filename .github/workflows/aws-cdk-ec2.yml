@@ -16,10 +16,10 @@ jobs:
         with:
           node-version: '14'
 
-      - name: Install Dependencies
-        run: npm install
+      - name: Install AWS CDK and TypeScript
+        run: npm install -g aws-cdk typescript
 
-      - name: Build TypeScript
+      - name: Build with TypeScript
         run: npm run build
 
       - name: Configure AWS CLI profile
@@ -34,6 +34,12 @@ jobs:
           aws configure --profile $AWS_PROFILE set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
           aws configure --profile $AWS_PROFILE set region $AWS_DEFAULT_REGION
 
+      - name: Synth CDK
+        run: |
+          cdk synth \
+          --app 'npx ts-node --prefer-ts-exts bin/faces-cdk-project.ts'
+          --output build/cdk.out
+          
       - name: Deploy CDK stack
         env:
           CLARIFAI_API_KEY: ${{ secrets.CLARIFAI_API_KEY }}
@@ -49,7 +55,8 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PORT: ${{ secrets.PORT }}
+        if: github.ref == 'refs/head/main'
         run: |
           cd faces-cdk-project
-          npx aws-cdk deploy --profile $AWS_PROFILE FacesCdkProjectStack --require-approval never
+          npx aws-cdk deploy --profile $AWS_PROFILE --app ./build/cdk.out FacesCdkProjectStack --require-approval never
           
