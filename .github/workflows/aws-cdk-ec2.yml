@@ -20,7 +20,9 @@ jobs:
         run: npm install -g aws-cdk typescript
 
       - name: Build with TypeScript
-        run: npm run build
+        run: |
+          cd ./faces-cdk-project
+          npm run build
 
       - name: Configure AWS CLI profile
         env:
@@ -56,7 +58,5 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PORT: ${{ secrets.PORT }}
         if: github.ref == 'refs/head/main'
-        run: |
-          cd faces-cdk-project
-          npx aws-cdk deploy --profile $AWS_PROFILE --app ./build/cdk.out FacesCdkProjectStack --require-approval never
+        run: npx aws-cdk deploy --profile $AWS_PROFILE --app ./build/cdk.out FacesCdkProjectStack --require-approval never
           
