@@ -16,14 +16,18 @@ jobs:
         with:
           node-version: '14'
 
-      - name: Install AWS CDK and TypeScript
-        run: npm install -g aws-cdk typescript
+      - name: Clear npm cache
 
+      - name: Install Dependencies CDK and TypeScript
+        run: npm ci && npm cache clean --force
+        
       - name: Build with TypeScript
+        env: 
+          NODE_ENV: production
         run: |
           cd ./faces-cdk-project
           npm run build
-
+          
       - name: Configure AWS CLI profile
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
