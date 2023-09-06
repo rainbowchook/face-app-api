@@ -16,8 +16,6 @@ jobs:
         with:
           node-version: '14'
 
-      - name: Clear npm cache
-
       - name: Install Dependencies CDK and TypeScript
         run: npm ci && npm cache clean --force
         
