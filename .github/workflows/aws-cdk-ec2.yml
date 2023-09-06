@@ -48,7 +48,7 @@ jobs:
         run: |
           npx aws-cdk synth \
           --app 'npx ts-node --prefer-ts-exts ./faces-cdk-project/bin/faces-cdk-project.ts'
-          --output build/cdk.out
+          --output ./faces-cdk-project/build/cdk.out
           
       - name: Deploy CDK stack
         env:
