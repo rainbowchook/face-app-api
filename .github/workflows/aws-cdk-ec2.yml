@@ -64,6 +64,5 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PORT: ${{ secrets.PORT }}
-        if: github.ref == 'refs/head/main'
         run: npx aws-cdk deploy --profile $AWS_PROFILE FacesCdkProjectStack --require-approval never
           
