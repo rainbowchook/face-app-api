@@ -16,16 +16,17 @@ jobs:
         with:
           node-version: '14'
 
-      - name: Change to CDK project directory
-        run: cd faces-cdk-project
-
       - name: Install Dependencies CDK and TypeScript
-        run: npm ci && npm cache clean --force
+        run: |
+          cd faces-cdk-project
+          npm ci && npm cache clean --force
         
       - name: Build with TypeScript
         env: 
           NODE_ENV: production
-        run: npm run build
+        run: |
+          cd faces-cdk-project
+          npm run build
           
       - name: Configure AWS CLI profile
         env:
@@ -42,7 +43,7 @@ jobs:
       - name: Synth CDK
         run: |
           npx aws-cdk synth \
-          --app 'npx ts-node --prefer-ts-exts faces-cdk-project/bin/faces-cdk-project.ts'
+          --app 'npx ts-node --prefer-ts-exts ./faces-cdk-project/bin/faces-cdk-project.ts'
           --output build/cdk.out
           
       - name: Deploy CDK stack
@@ -61,5 +62,5 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PORT: ${{ secrets.PORT }}
         if: github.ref == 'refs/head/main'
-        run: npx aws-cdk deploy --profile $AWS_PROFILE --app ./build/cdk.out FacesCdkProjectStack --require-approval never
+        run: npx aws-cdk deploy --profile $AWS_PROFILE --app ./faces-cdk-project/build/cdk.out FacesCdkProjectStack --require-approval never
           
