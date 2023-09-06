@@ -41,7 +41,7 @@ jobs:
           aws configure --profile $AWS_PROFILE set region $AWS_DEFAULT_REGION
 
       - name: Synth CDK
-      env:
+        env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACESS_KEY }}
           AWS_DEFAULT_REGION: ap-southeast-2
