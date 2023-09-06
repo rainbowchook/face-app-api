@@ -46,8 +46,9 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACESS_KEY }}
           AWS_DEFAULT_REGION: ap-southeast-2
         run: |
-          npx aws-cdk synth \
+          npx cdk synth \
           --app 'node ./faces-cdk-project/bin/faces-cdk-project.js'
+          --output ./faces-cdk-project/cdk.out
           
       - name: Deploy CDK stack
         env:
@@ -64,5 +65,5 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PORT: ${{ secrets.PORT }}
-        run: npx aws-cdk deploy --profile $AWS_PROFILE FacesCdkProjectStack --require-approval never
+        run: npx aws-cdk deploy --profile $AWS_PROFILE --app ./faces-cdk-project/cdk.out FacesCdkProjectStack --require-approval never
           
