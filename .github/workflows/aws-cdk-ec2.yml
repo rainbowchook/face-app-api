@@ -17,14 +17,14 @@ jobs:
           node-version: '14'
 
       - name: Install Dependencies CDK and TypeScript
-        run: npm ci && npm cache clean --force
+        run: |
+          cd ./faces-cdk-project
+          npm ci && npm cache clean --force
         
       - name: Build with TypeScript
         env: 
           NODE_ENV: production
-        run: |
-          cd ./faces-cdk-project
-          npm run build
+        run: npm run build
           
       - name: Configure AWS CLI profile
         env:
