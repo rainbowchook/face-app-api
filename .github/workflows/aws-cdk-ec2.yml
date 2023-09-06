@@ -24,7 +24,9 @@ jobs:
       - name: Build with TypeScript
         env: 
           NODE_ENV: production
-        run: npm run build
+        run: |
+          cd ./faces-cdk-project
+          npm run build
           
       - name: Configure AWS CLI profile
         env:
