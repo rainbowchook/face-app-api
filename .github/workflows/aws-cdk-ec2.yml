@@ -33,31 +33,31 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-southeast-2
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Install AWS CDK
         run: npm install -g aws-cdk
         
       - name: Synth CDK
+        env:
+            CLARIFAI_API_KEY: ${{ secrets.CLARIFAI_API_KEY }}
+            CLARIFAI_PAT_KEY: ${{ secrets.CLARIFAI_PAT_KEY }}
+            CLARIFAI_USER_ID: ${{ secrets.CLARIFAI_USER_ID }}
+            CLARIFAI_APP_ID: ${{ secrets.CLARIFAI_APP_ID }}
+            DB_HOST: ${{ secrets.DB_HOST }}
+            DB_PORT: ${{ secrets.DB_PORT }}
+            DB_USER: ${{ secrets.DB_USER }}
+            DB_NAME: ${{ secrets.DB_NAME }}
+            DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+            POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+            DATABASE_URL: ${{ secrets.DATABASE_URL }}
+            PORT: ${{ secrets.PORT }}
         run: |
-          npx cdk synth \
+          cdk synth \
           --app 'node bin/faces-cdk-project.js'
         working-directory: faces-cdk-project
           
       - name: Deploy CDK stack
-        env:
-          CLARIFAI_API_KEY: ${{ secrets.CLARIFAI_API_KEY }}
-          CLARIFAI_PAT_KEY: ${{ secrets.CLARIFAI_PAT_KEY }}
-          CLARIFAI_USER_ID: ${{ secrets.CLARIFAI_USER_ID }}
-          CLARIFAI_APP_ID: ${{ secrets.CLARIFAI_APP_ID }}
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_PORT: ${{ secrets.DB_PORT }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          PORT: ${{ secrets.PORT }}
-        run: npx aws-cdk deploy --app cdk.out FacesCdkProjectStack --require-approval never
+        run: cdk deploy --app cdk.out FacesCdkProjectStack --require-approval never
         working-directory: faces-cdk-project  
