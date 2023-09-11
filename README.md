@@ -13,13 +13,19 @@ Main project source code and CDK scripts were written in TypeScript.
 The API exposes /users and /images endpoints for: 
 registration, login, get user profile, get all users, delete user account, update user image entries count, and making a call to Clarifai through their GRPC client.
 
-/users/signin -> POST = success/fail (Login) \n
-/users -> POST = user - CREATE (Register) \n
-/users/:userId -> GET = user - READ (Get user profile) \n
-/users/ -> GET = users - READ (Get all users) \n
-/users/:userId/images -> PUT = user - UPDATE (Update user image entries count) \n
-/users/:userId -> DELETE - DELETE (Delete user account) \n
-/images/ -> POST - Make API call to Clarifai with image; returns JSON results (through GRPC client) \n
+/users/signin -> POST = success/fail (Login) 
+
+/users -> POST = user - CREATE (Register) 
+
+/users/:userId -> GET = user - READ (Get user profile) 
+
+/users/ -> GET = users - READ (Get all users) 
+
+/users/:userId/images -> PUT = user - UPDATE (Update user image entries count) 
+
+/users/:userId -> DELETE - DELETE (Delete user account) 
+
+/images/ -> POST - Make API call to Clarifai with image; returns JSON results (through GRPC client) 
 
 ## Architectural Overview
 
