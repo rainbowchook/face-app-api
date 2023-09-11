@@ -14,7 +14,9 @@ CI/CD setup was deliberately kept low-cost and simple but effective through the 
 ### Docker Image CI
 ![Docker Image CI status](https://github.com/rainbowchook/face-app-api/actions/workflows/docker-image.yml/badge.svg)
 
-Docker images built from ./Dockerfile and pushed to Docker Hub through Github Actions triggered by PR to main branch: [https://hub.docker.com/r/rainbowchook/faces-app-api](https://hub.docker.com/r/rainbowchook/faces-app-api)
+Docker images built from ./Dockerfile and pushed to Docker Hub through Github Actions triggered by PR to main branch.
+
+Docker Hub repo found here: [https://hub.docker.com/r/rainbowchook/faces-app-api](https://hub.docker.com/r/rainbowchook/faces-app-api)
 
 ### Manual CDK Deployment
 ![Manual CDK Deployment status](https://github.com/rainbowchook/face-app-api/actions/workflows/aws-cdk-ec2.yml/badge.svg)
