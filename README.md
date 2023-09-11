@@ -39,7 +39,7 @@ Routers exist in /src/routes directory for the /users and /images endpoints.
 Each route has route handlers located in /src/controllers.  
 Route handlers invoke services found in /src/services, such as database services with Knex as a bridging interface with the Postgresql database for database queries.
 
-Project Enhancement: Models were not created for Request and Responses, though a BoxSentiment type was clearly defined for the bounding boxes and sentiments returned from the /images endpoint, which makes a call to the Clarifai API for image processing.
+Project Enhancement: Models were not created for Requests and Responses, though a BoxSentiment type was clearly defined for the bounding boxes and sentiments returned from the /images endpoint, which makes a call to the Clarifai API for image processing.
 
 ### Postgresql database
 
