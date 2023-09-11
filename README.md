@@ -7,7 +7,7 @@ API for face-app client located at [https://github.com/rainbowchook/face-app](ht
 
 Most of the source code is located in the /src directory.  Written in TypeScript.
 
-## Continuous Integration and Continuous Deployment
+## Integration and Deployment
 
 CI/CD setup was deliberately kept low-cost and simple but effective through the use of GitHub Actions, which ran successfully.  
 
