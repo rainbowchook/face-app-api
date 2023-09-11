@@ -5,7 +5,7 @@ This is the back-end part of a full-stack PERN application for detecting faces a
 
 API for face-app client located at [https://github.com/rainbowchook/face-app](https://github.com/rainbowchook/face-app)
 
-Most of the source code is located
+Most of the source code is located in the /src directory.  Written in TypeScript.
 
 ## Continuous Integration and Continuous Deployment
 
