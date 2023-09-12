@@ -20,5 +20,6 @@
 **/obj
 **/secrets.dev.yaml
 **/values.dev.yaml
+**/faces-cdk-project
 LICENSE
 README.md
