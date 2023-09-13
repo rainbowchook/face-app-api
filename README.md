@@ -50,10 +50,147 @@ Deploys a single stack from /bin/faces.cdk.project.ts, with the environment set 
 All source code located in /lib folder.  Assets (docker-compose file and Postgresql init script) located in /lib/assets.
 
 The stack is created by calling the constructor of each construct in sequence and destructuring the instance returned as a readonly property:
-1. The VPC Construct does a lookup that dynamically returns the default VPC configurations based on the current context. 2. The SecurityGroup Construct sets the ingress and egress rules - allowing inbound only for SSH (TCP port 22), HTTP (TCP port 80) and HTTPS (TCP port 443), and allowing all outbound 
+1. The VPC Construct does a lookup that dynamically returns the default VPC configurations based on the current context.
+2. The SecurityGroup Construct sets the ingress and egress rules - allowing inbound traffic only for SSH (TCP port 22), HTTP (TCP port 80) and HTTPS (TCP port 443), and allowing all outbound traffic
+3. 
 
-#### Design decisions
-Instead of doing a readFileSync for /scripts/user-data.sh and adding it to the EC2 Spot Instance with .addUserData(userData), commands were added to the instance user data using the .addCommands() and addS3DownloadCommand() methods from UserData class for Amazon Linux AMI.  All commands were rendered and added to the EC2 Spot Instance through addUserData(userData.render()).
+
+#### Design decisions 
+1. Instead of using readFileSync for /scripts/user-data.sh and adding it to the EC2 Spot Instance with .addUserData(userData), commands were added to the instance user data using the .addCommands() and addS3DownloadCommand() methods from UserData class for Amazon Linux AMI.  All commands were rendered and added to the EC2 Spot Instance through addUserData(userData.render()).
+2. Environment variables from GitHub Actions secrets were referenced in the user data script and exported into the EC2 instance.  The GitHub Actions logs appropriately masks environment variables injected at runtime.  Loading the environment variables into SSM Parameter Store or loading a file in the S3 bucket encrypted with KMS would have been redundant.
+
+
+## CDK setup
+
+### AWS CLI setup in local development environment
+
+#### Docker Installation
+
+Pre-requisite: Docker installed (see [Docker website](https://docs.docker.com/get-docker/))
+
+```shell
+$ docker --version
+```
+
+Docker Hub Rate Limiting unlikely to be an issue for local developer testing with AWS CLI.
+
+#### Setup AWS alias
+
+For Linux and MacOS, set an alias to run AWS CLI version 2 from within a container (image pulled from Docker Hub) as if it's installed on the host system:
+
+```shell
+$ alias aws='docker run --rm -it -v ~/.aws:/root/.aws -v $(pwd):/aws amazon/aws-cli'
+$ alias | grep 'aws'
+aws='docker run --rm -it -v ~/.aws:/root/.aws -v $(pwd):/aws amazon/aws-cli'
+$ aws --version
+aws-cli/2.10.0 Python/3.7.3 Linux/4.9.184-linuxkit botocore/2.4.5dev10
+```
+
+The alias is defined for the current shell session.
+To set the alias for all future shell sessions, edit the ~/.bashrc, ~/.bash_profile or ~/.zshrc file.
+
+Specify the volume mounts ~/.aws:/root/.aws and ${pwd}:/aws for access to the host file system, credentials and configuration settings when using aws commands, which allows AWS CLI running in the container to locate host file information.
+
+#### Configure AWS profile
+
+Account information for the default profile or named profile can be configured with AWS CLI by running:
+
+```
+aws configure
+aws configure --profile prod
+```
+
+Or, use the manual process of configuring credentials and configuration:
+
+1. Create or open the credentials file, which is ~/.aws/credentials on Linux and MacOS.  Add default AWS IAM user with programmatic access and necessary permissions.  For example:
+   ```
+   [default] 
+    aws_access_key_id = AKIAIOSFODNN7EXAMPLE 
+    aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+    aws_session_token = IQoJb3JpZ2luX2IQoJb3JpZ2luX2IQoJb3JpZ2luX2IQoJb3JpZ2luX2IQoJb3JpZVERYLONGSTRINGEXAMPLE
+
+   [user1] 
+    aws_access_key_id = AKIAIOSFODNN7EXAMPLE 
+    aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+    aws_session_token = IQoJb3JpZ2luX2IQoJb3JpZ2luX2IQoJb3JpZ2luX2IQoJb3JpZ2luX2IQoJb3JpZVERYLONGSTRINGEXAMPLE
+   ```
+2. Add preferred default region and format to the shared config file, which is ~/.aws/config on Linux and MacOS.
+   ```
+    [default]
+    region=us-west-2
+    output=json
+    
+    [profile user1]
+    region=us-east-1
+    output=text
+   ```
+Specify the profile when issuing cdk commands using the --profile option or the AWS_PROFILE environment variable (can be added with a -e flag in the docker run command for the AWS CLI).  
+
+Useful commands for getting default account information, account information for a specific profile, and the region for which the account is configured for:
+
+```
+aws sts get-caller-identity
+aws sts get-caller-identity --profile prod
+
+aws configure get region
+aws configure get region --profile prod
+```
+
+### CDK project setup
+
+#### Initialise CDK project
+
+TypeScript and the CDK Toolkit can be installed globally by running <code>npm install -g typescript aws-cdk</code>
+
+Initialise a new CDK project e.g. faces-cdk-project, cdk-app, etc.
+
+```shell
+$ mkdir cdk-app
+$ cd cdk-app
+$ npx aws-cdk init --language=typescript
+```
+
+If the CDK Toolkit is not installed globally 
+
+#### Bootstrap CDK project
+
+Bootstrap stack deployment for the CDK project by creating dedicated AWS resources e.g. Amazon S3 buckets, to be available to AWS CloudFormation during deployment. 
+
+```shell
+$ aws sts get-caller-identity
+cdk bootstrap aws://ACCOUNT-NUMBER/REGION
+```
+
+#### Build
+For CDK projects initialised in TypeScript, the project is automatically compiled into JavaScript in watch mode with ts-node, as specified in the cdk.json file:
+
+```js
+{
+  "app": "npx ts-node --prefer-ts-exts bin/faces-cdk-project.ts",
+...
+}
+```
+
+#### CDK Synth
+To test that the stack defined in the AWS CDK app can be synthesised and deployed, issue the command from the CDK project's main directory:
+
+```
+cdk synth
+```
+This app only defines a single stack, so there is no need to specify the Stack name after the command.
+
+The output of the <code>cdk synth</code> command will be sent to the /cdk.out directory, which will include the synthesised template of the stack as well as any stack assets.
+
+No need to explicitly synthesise stacks before deployment as <code>cdk deploy</code> performs this step.  However, it is useful as a test before deployment in the GitHub Actions workflow.  Also, the synthesised template can be used in the deployment by using the --app /path/to/cdk.out. 
+
+#### CDK Deploy
+Deploy the resources defined by the stack in the AWS CDK app to AWS by issuing the command from the CDK project's main directory:
+
+```
+cdk deploy
+```
+This app only defines a single stack, so there is no need to specify the Stack name(s) after the command.
+
 
 
 ## Integration and Deployment
@@ -87,8 +224,17 @@ As the browser will not allow mixed media content to be served (the server is se
 
 [Mixed media content: Website delivers HTTPS pages but contains HTTP links](https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content/How_to_fix_website_with_mixed_content)
 
+[AWS CLI Amazon ECR Public/Docker Getting Started User Guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-docker.html)
 
+[AWS CLI Authenticate with short-term credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-authentication-short-term.html)
 
+[AWS CDK v2 Getting Started and Bootstrapping](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html#getting_started_bootstrap)
+
+[CDK Bootstrapping](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html)
+
+[Guide to Working with CDK in TypeScript](https://docs.aws.amazon.com/cdk/v2/guide/work-with-cdk-typescript.html)
+
+[EC2 Spot Instance Pricing](https://aws.amazon.com/ec2/spot/pricing/)
 
 
 
