@@ -140,7 +140,9 @@ aws configure get region --profile prod
 
 #### Initialise CDK project
 
-TypeScript and the CDK Toolkit can be installed globally by running <code>npm install -g typescript aws-cdk</code>
+TypeScript and the CDK Toolkit can be installed globally by running <code>npm install -g typescript aws-cdk</code>.  
+
+Or, use local tools:
 
 Initialise a new CDK project e.g. faces-cdk-project, cdk-app, etc.
 
@@ -150,26 +152,32 @@ $ cd cdk-app
 $ npx aws-cdk init --language=typescript
 ```
 
-If the CDK Toolkit is not installed globally 
-
-#### Bootstrap CDK project
-
-Bootstrap stack deployment for the CDK project by creating dedicated AWS resources e.g. Amazon S3 buckets, to be available to AWS CloudFormation during deployment. 
-
-```shell
-$ aws sts get-caller-identity
-cdk bootstrap aws://ACCOUNT-NUMBER/REGION
-```
+An alias <code>cdk</code> can be set for <code>npx aws-cdk</code> in the current shell session, or for all future shell sessions by editing the ~/.bashrc, ~/.bash_profile or ~/.zshrc file.
 
 #### Build
-For CDK projects initialised in TypeScript, the project is automatically compiled into JavaScript in watch mode with ts-node, as specified in the cdk.json file:
+For CDK projects initialised in TypeScript, the project is automatically compiled into JS with ts-node, as specified in the cdk.json file:
 
 ```js
 {
   "app": "npx ts-node --prefer-ts-exts bin/faces-cdk-project.ts",
-...
+   ...
 }
 ```
+
+Build with <code>tsc</code> if using global tools, or if using local tools, use <code>npm run build</code>.
+
+#### Bootstrap CDK project
+
+Bootstrap stack deployment for the CDK project by creating dedicated AWS resources e.g. Amazon S3 buckets, to be available to AWS CloudFormation during deployment. Bootstrap can be run with a named profile.
+
+```
+aws sts get-caller-identity
+cdk bootstrap aws://ACCOUNT-NUMBER/REGION
+
+cdk bootstrap --profile prod aws://ACCOUNT-NUMBER/REGION
+```
+
+From the AWS management console, new CloudFormation stack, CDKToolkit, will be created.  
 
 #### CDK Synth
 To test that the stack defined in the AWS CDK app can be synthesised and deployed, issue the command from the CDK project's main directory:
@@ -191,7 +199,49 @@ cdk deploy
 ```
 This app only defines a single stack, so there is no need to specify the Stack name(s) after the command.
 
+For testing from local development environment, <code>cdk deploy</code> can be run with or without a named profile.  FOr example:
 
+```
+cdk deploy FacesCdkProjectStack
+cdk deploy --profile prod FacesCdkProjectStack --require-approval never
+```
+
+Or deploy using the synthesised stack template found in the <code>cdk.out</code> directory:
+
+```
+cdk deploy --app cdk.out FacesCdkProjectStack --require-approval never
+cdk deploy --profile prod --app cdk.out FacesCdkProjectStack --require-approval never
+```
+
+#### Other CDK commands
+
+Use <code>cdk destroy</code> to destroy the stack created after testing is completed.  For example:
+
+```
+cdk destroy FacesCdkProjectStack
+cdk destroy --profile prod FacesCdkProjectStack
+```
+
+#### IAM roles/users required
+
+An IAM role/user for CDK deployment must be provisioned along with the necessary persmissions to assume the role and create and manage the resources of the stack.  
+
+As the stack includes an EC2 Spot Instance, an EC2 instance profile also had to be set up with the necessary permissions.
+
+### Test for successful deployment
+
+On successful creation of the stack following a <code>cdk deploy</code>:
+
+1. Go to the AWS management console and navigate to EC2 > Instances.  A new instance will be spun up with the INstance State being 'RUNNING' and the Status Check will be completed.
+2. Click on the EC2 instance link.  The public address can be copied to the REACT_APP_SERVER_URL environment variable in the front end client's deployment project settings in Vercel.  A new deployment must be triggered to make use of the new value of the environment variable. 
+3. Click on 'Connect'.  The instance ID can be copied from here.
+4. Again, click on 'Connect' to open an SSH connection to the EC2 instance with the keypair specified in the CDK script.
+5. Run <code>docker ps -a</code>.  Two containers, <code>postgres</code> and <code>faces</code> will be running.
+6. Run <code>curl -v http://localhost/users</code>.  A 200 response will be returned by the Express server.
+7. Run <code>sudo cat /var/lib/cloud/instances/<instance_ID>/user-data.txt</code>.  This is the user data script that was run by the EC2 instance profile on spinning up the instance.  All environment variables will have been exported when the script was run.
+8. Run <code>cat /home/ec2-user/APP/docker-compose.log</code> to find the logs from when <code>docker-compose up</code> was run.
+9. Run <code>ls -la /home/ec2-user/APP/docker-compose.yml</code> and <code>/home/ec2-user/APP/postgres/init-scripts</code> to find the <code>docker-compose.yml</code> and <code>setupDB.sh</code> files were downloaded from S3.
+10. Run <code>docker exec -it <postgres_container_name> sh</code>.  An interactive shell session will be made available to run psql.
 
 ## Integration and Deployment
 
@@ -213,6 +263,8 @@ Every deployment spins up a new EC2 Spot Instance.  The front-end client must be
 
 The EC2 instance profile will initialise the instance through the user data script: The assets (docker-compose file and Postgres init script) and exported environment variables will be used to pull, start and initialise Docker containers of the Express server and Postgresql database from Docker Hub images, communicating via Docker custom bridge network connection, as specified in the docker-compose file.  
 
+
+
 #### Use of HTTP instead of HTTPS
 As this project is deliberately kept low-cost by requiring a new stack to be deployed each time, no domain nor CA was purchased for a secure HTTPS connection.  The stack is always destroyed after testing.
 
@@ -233,6 +285,8 @@ As the browser will not allow mixed media content to be served (the server is se
 [CDK Bootstrapping](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html)
 
 [Guide to Working with CDK in TypeScript](https://docs.aws.amazon.com/cdk/v2/guide/work-with-cdk-typescript.html)
+
+[Processing EC2 user data script](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html)
 
 [EC2 Spot Instance Pricing](https://aws.amazon.com/ec2/spot/pricing/)
 
