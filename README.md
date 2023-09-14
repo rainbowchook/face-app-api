@@ -31,17 +31,79 @@ registration, login, get user profile, get all users, delete user account, updat
 
 ### Express server
 
-The server is CORS-enabled and accepts JSON request bodies.  
+The server is CORS-enabled and accepts JSON request bodies. 
 
 View-Controller architecture employed: All routes, controllers and services are re-exported from the index.ts within the /src/routes, /src/controllers and /src/services directories to enable a cleaner separation of roles ie separating view from business logic.
 
 Routers exist in /src/routes directory for the /users and /images endpoints.  
-Each route has route handlers located in /src/controllers.  
-Route handlers invoke services found in /src/services, such as database services with Knex as a bridging interface with the Postgresql database for database queries.
 
-Project Enhancement: Models were not created for Requests and Responses, though a BoxSentiment type was clearly defined for the bounding boxes and sentiments returned from the /images endpoint, which makes a call to the Clarifai API for image processing.
+Each route has route handlers located in /src/controllers.  
+
+Route handlers invoke services found in /src/services, such as database services with Knex as a bridging interface with the Postgresql database for database queries.  For this project's simple requirements, Knex was used as a query builder in conjunction with the pg database driver to connect to the database.  An ORM was not needed (see [this blog post](https://blog.logrocket.com/node-js-orms-why-shouldnt-use/)).
+
+During registration, passwords are hashed with brcyptjs before storing in the <code>login</code> table in the database.
+For logins, user plaintext passwords are compared with the stored hashed password via brcypt's compare function.
+
+#### Future Enhancements/Todos
+
+1. Models were not created for Requests and Responses, though a BoxSentiment type was clearly defined for the bounding boxes and sentiments returned from the /images endpoint, which makes a call to the Clarifai API for image processing.
+2. Login and register requests can be routed through a middleware that sets the user session on a cookie.  Subsequent requests to the /images endpoint should check to see if the user session has expired.  
 
 ### Postgresql database
+
+#### Setup Postgresql from Docker image
+
+In the local development environment, Postgresql Docker image was used instead of a local installation.  
+
+```
+docker run --name postgresql -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=password -p 5432:5432 -v $PWD/data:/var/lib/postgresql/data -d postgres
+docker exec -it postgresql sh
+```
+<code>$PWD</code> needed for MacOS.
+
+Equivalent command:
+
+```
+docker run -itd –name postgresql -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=password -p 5432:5432 -v $PWD/data:/var/lib/postgresql/data postgres
+```
+
+A data volume in the local host environment must be mounted.
+
+#### Setup of Postgres Database
+
+A shell script or .sql scripts can be run if the directory that contains the scripts were mounted as a volume to bind to <code>docker-entrypoint-initdb.d</code> directory on the postgres container.
+
+Alternatively, just run the shell script setupDB.sh on opening an interactive shell session for the postgres docker container with the -it flags within the <code>docker run</code> command.
+
+```sql
+CREATE DATABASE $DB_NAME;
+  \connect $DB_NAME;
+  CREATE SCHEMA IF NOT EXISTS $SCHEMA;
+  CREATE USER $DB_USER WITH ENCRYPTED PASSWORD '$DB_PASSWORD';
+  GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
+  GRANT ALL ON SCHEMA $SCHEMA TO $DB_USER;
+  \connect $DB_NAME $DB_USER;
+  CREATE TABLE $SCHEMA.users (
+    id serial PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email text UNIQUE NOT NULL,
+    entries BIGINT DEFAULT 0,
+    joined TIMESTAMP NOT NULL
+  );
+  CREATE TABLE $SCHEMA.login (
+    id serial PRIMARY KEY,
+    email text UNIQUE NOT NULL,
+    hash VARCHAR(100) NOT NULL
+  );
+```
+
+The <code>login</code> table only keeps the user email and hashed password.  Other user details are kept in the <code>users</code> table.
+
+Sample query to check that the request handler for the POST /users end-point of the Express server is working correctly:
+```
+SELECT * FROM users JOIN login ON users.email = login.email;
+```
+During registration, user records should be inserted into the <code>users</code> and <code>login</code> tables.  
 
 ### CDK scripts for CloudFormation (Infrastructure as Code)
 
@@ -53,11 +115,61 @@ The stack is created by calling the constructor of each construct in sequence an
 1. The VPC Construct does a lookup that dynamically returns the default VPC configurations based on the current context.
 2. The SecurityGroup Construct sets the ingress and egress rules - allowing inbound traffic only for SSH (TCP port 22), HTTP (TCP port 80) and HTTPS (TCP port 443), and allowing all outbound traffic
 3. 
+4. 
 
+#### IAM roles and policies
+
+1. CDK deploy user
+The credentials or named profile of the AWS user or role used in the running of cdk commands e.g. <code>cdk boostrap</> must have sufficient IAM permissions for CDK setup, like '<code>cloudFormation:CreateStack</code>', '<code>s3:CreateBucket</code>', and other CloudFormation permissions.
+
+Permissions need to be granted depending on services used in the CDK script.  EC2 permissions are needed for launching, describing and terminating of EC2 instances.  As the CDK script uses assets stored in an S3 bucket, it should also have S3 permissions.
+
+3. EC2 instance profile
+The instance profile is assigned to the EC2 instance when launching or modifying the instance, granting permissions to the EC2 instances to allow instances to access other AWS services securely.
+
+IAM permissions for the EC2 instance profile were granted following the principle of least privilege and granting only the permissions needed for specific tasks that the EC2 instance profile will perform. 
+
+The role assumed by the EC2 instance profile initially had IAM permissions granted through the AWS management console (it can also be done through the AWS CLI).  
+
+As it also performs Docker ops during the running of the user data script, a DockerOps custom policy was created to pull images from Docker Hub, interact with the Docker daemon.  Sample DockerOps policy:
+```js
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Sid": "VisualEditor0",
+			"Effect": "Allow",
+			"Action": [
+				"ec2:CreateNetworkInterface",
+				"ec2:DescribeInstances",
+				"ec2:DescribeNetworkInterfaces",
+				"ec2:CreateTags",
+				"ec2:DeleteNetworkInterface",
+				"ec2:DescribeInstanceStatus"
+			],
+			"Resource": "*"
+		}
+	]
+}
+```
+
+The process of granting permissions for the IAM roles and policies was characterised by much trial and error.  
+
+If the stack cannot be torn down automatically, it must be destroyed manually.  Through the AWS management console, delete the stack in CloudFormation and any S3 buckets or EC2 instances created before adjusting IAM permissions and re-deploying.
 
 #### Design decisions 
 1. Instead of using readFileSync for /scripts/user-data.sh and adding it to the EC2 Spot Instance with .addUserData(userData), commands were added to the instance user data using the .addCommands() and addS3DownloadCommand() methods from UserData class for Amazon Linux AMI.  All commands were rendered and added to the EC2 Spot Instance through addUserData(userData.render()).
-2. Environment variables from GitHub Actions secrets were referenced in the user data script and exported into the EC2 instance.  The GitHub Actions logs appropriately masks environment variables injected at runtime.  Loading the environment variables into SSM Parameter Store or loading a file in the S3 bucket encrypted with KMS would have been redundant.
+2. Environment variables from GitHub Actions secrets were referenced in the user data script and exported into the EC2 instance.  The GitHub Actions logs appropriately masks environment variables injected at runtime.  Loading the environment variables into SSM Parameter Store or loading a file in the S3 bucket encrypted with KMS would have been redundant. (This will require modifications to the front-end for the user session logout to be effected).
+
+## Dockerisation 
+
+### Dockerfile of Express server
+
+
+
+### Docker Compose
+
+Use docker-compose to start up Postgresql and Express server containers
 
 
 ## CDK setup
@@ -168,7 +280,9 @@ Build with <code>tsc</code> if using global tools, or if using local tools, use 
 
 #### Bootstrap CDK project
 
-Bootstrap stack deployment for the CDK project by creating dedicated AWS resources e.g. Amazon S3 buckets, to be available to AWS CloudFormation during deployment. Bootstrap can be run with a named profile.
+Bootstrap stack deployment for the CDK project by creating dedicated AWS resources to be available to AWS CloudFormation during deployment i.e. setting up Amazon S3 buckets to store CDK assets and a CloudFormation stack for managing CDK resources. 
+
+Bootstrap can be run with a named profile.
 
 ```
 aws sts get-caller-identity
@@ -232,7 +346,7 @@ As the stack includes an EC2 Spot Instance, an EC2 instance profile also had to 
 
 On successful creation of the stack following a <code>cdk deploy</code>:
 
-1. Go to the AWS management console and navigate to EC2 > Instances.  A new instance will be spun up with the INstance State being 'RUNNING' and the Status Check will be completed.
+1. Go to the AWS management console and navigate to EC2 > Instances.  A new instance will be spun up with the Instance State being 'RUNNING' and the Status Check will be completed.
 2. Click on the EC2 instance link.  The public address can be copied to the REACT_APP_SERVER_URL environment variable in the front end client's deployment project settings in Vercel.  A new deployment must be triggered to make use of the new value of the environment variable. 
 3. Click on 'Connect'.  The instance ID can be copied from here.
 4. Again, click on 'Connect' to open an SSH connection to the EC2 instance with the keypair specified in the CDK script.
@@ -242,6 +356,26 @@ On successful creation of the stack following a <code>cdk deploy</code>:
 8. Run <code>cat /home/ec2-user/APP/docker-compose.log</code> to find the logs from when <code>docker-compose up</code> was run.
 9. Run <code>ls -la /home/ec2-user/APP/docker-compose.yml</code> and <code>/home/ec2-user/APP/postgres/init-scripts</code> to find the <code>docker-compose.yml</code> and <code>setupDB.sh</code> files were downloaded from S3.
 10. Run <code>docker exec -it <postgres_container_name> sh</code>.  An interactive shell session will be made available to run psql.
+11. To enter psql, run:
+```shell
+# PGPASSWORD=password psql -U postgres
+```
+12. Run <code>\c <DB_NAME> <DB_USER></code> to connect to the database created as the DB user created in the postgres init scripts i.e. setupDB.sh.
+13. Run <code>\d</code> to describe DB tables.  For example:
+```shell
+facesdb=> \d
+            List of relations
+ Schema |     Name     |   Type   | Owner 
+--------+--------------+----------+-------
+ public | login        | table    | faces
+ public | login_id_seq | sequence | faces
+ public | users        | table    | faces
+ public | users_id_seq | sequence | faces
+(4 rows)
+
+```
+
+Completion of this checklist means that the stack was successfully deployed, and the user data script and postgres init scripts were successfully run.
 
 ## Integration and Deployment
 
@@ -263,14 +397,23 @@ Every deployment spins up a new EC2 Spot Instance.  The front-end client must be
 
 The EC2 instance profile will initialise the instance through the user data script: The assets (docker-compose file and Postgres init script) and exported environment variables will be used to pull, start and initialise Docker containers of the Express server and Postgresql database from Docker Hub images, communicating via Docker custom bridge network connection, as specified in the docker-compose file.  
 
-
-
 #### Use of HTTP instead of HTTPS
 As this project is deliberately kept low-cost by requiring a new stack to be deployed each time, no domain nor CA was purchased for a secure HTTPS connection.  The stack is always destroyed after testing.
 
 Port 80 will be open, thus the front-end client will make calls to http://<EC2_public_URL>.
 
 As the browser will not allow mixed media content to be served (the server is serving over HTTP instead of HTTPS), all requests from the front-end client will be routed through a serverless function, deployed together with the front-end app to Vercel, thus bypassing browser restrictions.
+
+## Reflections
+
+### Alternative deployment strategy
+1. The express server functionality can be converted into serverless functions and deployed together with the front-end app on Vercel, bypassing the need for a serverless function to act as a proxy to route requests over HTTP to the Express server hosted on AWS EC2, without a domain and a CA to enable HTTPS connection.  Serverless functions also come with in-built horizontal scaling, although a slower start-up time can be expected if demand drops.
+
+2. Even the Postgresql database can be replaced with Vercel Postgres to keep the resources close to each other.  [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres) is a scalable serverless framework designed to integrate with Vercel Functions (serverless functions and edge functions) and the frontend framework.
+
+3. Another alternative is deploying the database using [Planetscale](https://planetscale.com/docs/concepts/what-is-planetscale), a MySQL-compatible serverless database, by selecting a region close to the application server or region that the serverless function is deployed in (Vercel allows specifying the region for the serverless function). Planetscale deploys over AWS and GCP, which makes it easy to co-locate the application server and database in the same region.
+
+4. Since the Express server and Postgresql database were deployed as Docker containers (bearing in mind cost-effectiveness), they could have been deployed into ECS for horizontal scaling of services depending on demand.  
 
 ## References
 
@@ -290,6 +433,8 @@ As the browser will not allow mixed media content to be served (the server is se
 
 [EC2 Spot Instance Pricing](https://aws.amazon.com/ec2/spot/pricing/)
 
+[How to use the Postgres Docker Official Image](https://www.docker.com/blog/how-to-use-the-postgres-docker-official-image/)
 
 
+[Planetscale Regions](https://planetscale.com/docs/concepts/regions)
 
