@@ -53,7 +53,7 @@ For logins, user plaintext passwords are compared with the stored hashed passwor
 
 #### Setup Postgresql from Docker image
 
-In the local development environment, Postgresql Docker image was used instead of a local installation.  
+The [official Postgresql Docker image](https://hub.docker.com/_/postgres) was used instead of a local installation.  It is good enough for testing purposes and POC projects of this complexity.
 
 ```
 docker run --name postgresql -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=password -p 5432:5432 -v $PWD/data:/var/lib/postgresql/data -d postgres
@@ -115,16 +115,25 @@ The stack is created by calling the constructor of each construct in sequence an
 1. The VPC Construct does a lookup that dynamically returns the default VPC configurations based on the current context.
 2. The SecurityGroup Construct sets the ingress and egress rules - allowing inbound traffic only for SSH (TCP port 22), HTTP (TCP port 80) and HTTPS (TCP port 443), and allowing all outbound traffic
 3. 
-4. 
+
+#### User Data script for EC2 instance initialisation
+
+The EC2 instance profile will run the user data script as the root user.  On connecting to the EC2 instance, the user-data script can be found in /var/lib/cloud/instances/<instance_ID>/user-data.txt.
+
+Install docker and start the docker service, which will be run in the docker group.
+
+Add the ec2-user to the docker group with <code>sudo usermod -aG docker ec2-user</code>.  This will enable the ec2-user to run <code>docker</code> commands without using <code>sudo</code>.
+
+Note that docker-compose must be installed first prior to running the docker-compose.yml asset downloaded from the S3 bucket.
 
 #### IAM roles and policies
 
-1. CDK deploy user
-The credentials or named profile of the AWS user or role used in the running of cdk commands e.g. <code>cdk boostrap</> must have sufficient IAM permissions for CDK setup, like '<code>cloudFormation:CreateStack</code>', '<code>s3:CreateBucket</code>', and other CloudFormation permissions.
+##### CDK deploy user
+The credentials or named profile of the AWS user or role used in the running of cdk commands e.g. <code>cdk boostrap</code> must have sufficient IAM permissions for CDK setup, like '<code>cloudFormation:CreateStack</code>', '<code>s3:CreateBucket</code>', and other CloudFormation permissions.
 
 Permissions need to be granted depending on services used in the CDK script.  EC2 permissions are needed for launching, describing and terminating of EC2 instances.  As the CDK script uses assets stored in an S3 bucket, it should also have S3 permissions.
 
-3. EC2 instance profile
+##### EC2 instance profile
 The instance profile is assigned to the EC2 instance when launching or modifying the instance, granting permissions to the EC2 instances to allow instances to access other AWS services securely.
 
 IAM permissions for the EC2 instance profile were granted following the principle of least privilege and granting only the permissions needed for specific tasks that the EC2 instance profile will perform. 
@@ -163,14 +172,64 @@ If the stack cannot be torn down automatically, it must be destroyed manually.  
 
 ## Dockerisation 
 
+Prerequisite: Create a Docker Hub account and a Docker Hub repo.  Make the repo public to enable the Docker image to be pulled by the AWS EC2 instance.
+
 ### Dockerfile of Express server
 
+As TypeScript was installed as a dev dependency, run <code>npm ci && npm cache clean --force</code> to install packages in /node_modules folder first.
 
+Set the NODE_ENV environment variable to 'production' before running <code>npm run build</code> to compile the TypeScript code into JS. 
+
+Then prune all dev dependencies by running <code>npm prune --production</code>
+
+The user <code>node</code> in the Docker container must be granted ownership of the working directory with the recursive flag:
+```
+RUN chown -R node /app
+USER node
+```
+
+Run the command to start the server thus:
+```
+CMD ["node", "build/server.js"]
+```
+
+### Build and Push Docker Image
+
+Run the <code>docker build</code> command in the project directory from the Dockerfile, tagging the image as with <code>latest</code>:
+```
+docker build . --file Dockerfile --tag <DockerHub_username>/<DockerHub_repo>:latest
+
+docker build . --file Dockerfile --tag rainbowchook/faces-app-api:latest
+```
+
+Then login to the Docker Hub account and push the Docker image on to the Docker Hub repo created earlier:
+```
+docker push <DockerHub_username>/<DockerHub_repo>
+
+docker push rainbowchook/faces-app-api
+```
 
 ### Docker Compose
 
-Use docker-compose to start up Postgresql and Express server containers
+There are two docker-compose files: docker-compose.dev.yml used in development, and docker-compose.yml uploaded as an S3 asset by the CDK scripts to be run in the EC2 user data script.  
 
+The local docker-compose.dev.yml file builds the Express server Docker container from the given context and Dockerfile.  
+
+#### Docker network
+
+Use docker-compose to start up Postgresql and Express server containers to run on the same network, which is by default the bridge network.  
+
+The DB_HOST referred to in the Express server container must be the name of the Postgres container for a custom bridge network arrangement.
+
+#### Data volume
+
+The db service was configured to use a named data volume called 'postgres' in docker-compose.yml.
+
+#### Health check
+
+The prod docker-compose.yml file was refined while deploying to the EC2 instance and tweaked to include health checks for the db service as the database was being restarted in the postgres container before it was ready to accept connections, thus aborting the running of the database init script (setupDB.sh) but already running with a non-empty data volume - which then causes the postgres docker entrypoint init script to skip the running of database init scripts.  The health check forces an artificial delay of the database restart, which allows the database init scripts found in /docker-entrypoint-initdb.d to be run fully before the database restart.  The server service depends on the db service being in a healthy condition.
+
+Get the logs for the postgres container by running <code>docker logs -f postgres</code> in order to see that the database init script(s) was run.
 
 ## CDK setup
 
@@ -178,7 +237,7 @@ Use docker-compose to start up Postgresql and Express server containers
 
 #### Docker Installation
 
-Pre-requisite: Docker installed (see [Docker website](https://docs.docker.com/get-docker/))
+Pre-requisite: [Docker](https://docs.docker.com/get-docker/) installed
 
 ```shell
 $ docker --version
@@ -201,7 +260,7 @@ aws-cli/2.10.0 Python/3.7.3 Linux/4.9.184-linuxkit botocore/2.4.5dev10
 The alias is defined for the current shell session.
 To set the alias for all future shell sessions, edit the ~/.bashrc, ~/.bash_profile or ~/.zshrc file.
 
-Specify the volume mounts ~/.aws:/root/.aws and ${pwd}:/aws for access to the host file system, credentials and configuration settings when using aws commands, which allows AWS CLI running in the container to locate host file information.
+Specify the volume mounts ~/.aws:/root/.aws and $(pwd):/aws for access to the host file system, credentials and configuration settings when using aws commands, which allows AWS CLI running in the container to locate host file information.
 
 #### Configure AWS profile
 
@@ -377,7 +436,7 @@ facesdb=> \d
 
 Completion of this checklist means that the stack was successfully deployed, and the user data script and postgres init scripts were successfully run.
 
-## Integration and Deployment
+## GitHub Actions: Integration and Deployment
 
 CI/CD setup was deliberately kept low-cost and simple but effective through the use of GitHub Actions, which ran successfully.  
 
@@ -397,13 +456,6 @@ Every deployment spins up a new EC2 Spot Instance.  The front-end client must be
 
 The EC2 instance profile will initialise the instance through the user data script: The assets (docker-compose file and Postgres init script) and exported environment variables will be used to pull, start and initialise Docker containers of the Express server and Postgresql database from Docker Hub images, communicating via Docker custom bridge network connection, as specified in the docker-compose file.  
 
-#### Use of HTTP instead of HTTPS
-As this project is deliberately kept low-cost by requiring a new stack to be deployed each time, no domain nor CA was purchased for a secure HTTPS connection.  The stack is always destroyed after testing.
-
-Port 80 will be open, thus the front-end client will make calls to http://<EC2_public_URL>.
-
-As the browser will not allow mixed media content to be served (the server is serving over HTTP instead of HTTPS), all requests from the front-end client will be routed through a serverless function, deployed together with the front-end app to Vercel, thus bypassing browser restrictions.
-
 ## Reflections
 
 ### Alternative deployment strategy
@@ -413,7 +465,15 @@ As the browser will not allow mixed media content to be served (the server is se
 
 3. Another alternative is deploying the database using [Planetscale](https://planetscale.com/docs/concepts/what-is-planetscale), a MySQL-compatible serverless database, by selecting a region close to the application server or region that the serverless function is deployed in (Vercel allows specifying the region for the serverless function). Planetscale deploys over AWS and GCP, which makes it easy to co-locate the application server and database in the same region.
 
-4. Since the Express server and Postgresql database were deployed as Docker containers (bearing in mind cost-effectiveness), they could have been deployed into ECS for horizontal scaling of services depending on demand.  
+4. Since the Express server and Postgresql database were deployed as Docker containers (bearing in mind cost-effectiveness), they could have been deployed into ECS for horizontal scaling of services depending on demand.
+
+
+### Use of HTTP instead of HTTPS
+As this project is deliberately kept low-cost by requiring a new stack to be deployed each time, no domain nor CA was purchased for a secure HTTPS connection.  The stack is always destroyed after testing.
+
+Port 80 will be open, thus the front-end client will make calls to http://<EC2_public_URL>.
+
+As the browser will not allow mixed media content to be served (the server is serving over HTTP instead of HTTPS), all requests from the front-end client will be routed through a serverless function, deployed together with the front-end app to Vercel, thus bypassing browser restrictions.
 
 ## References
 
@@ -435,6 +495,18 @@ As the browser will not allow mixed media content to be served (the server is se
 
 [How to use the Postgres Docker Official Image](https://www.docker.com/blog/how-to-use-the-postgres-docker-official-image/)
 
+[Introducing Health Check for Postgres Docker container](https://stackoverflow.com/a/71315084/20171966)
 
 [Planetscale Regions](https://planetscale.com/docs/concepts/regions)
 
+[Running Docker on AWS EC2](https://medium.com/appgambit/part-1-running-docker-on-aws-ec2-cbcf0ec7c3f8)
+
+[Install docker-compose in Amazon Linux 2 EC2 instance](https://stackoverflow.com/questions/63708035/installing-docker-compose-on-amazon-ec2-linux-2-9kb-docker-compose-file)
+
+[AWS LAMP Amazon Linux 2 Guide: Setting ec2-user to a group and permissions](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-lamp-amazon-linux-2.html)
+
+[Changing ownership and permissions of ec2-user](https://stackoverflow.com/questions/27611608/ec2-user-permissions)
+
+[Adding ec2-user to group](https://stackoverflow.com/questions/72360551/adding-ec2-user-to-docker-group)
+
+[AWS User Guide: Processing user data script](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html)
