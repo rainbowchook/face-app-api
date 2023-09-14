@@ -129,7 +129,7 @@ Note that docker-compose must be installed first prior to running the docker-com
 #### IAM roles and policies
 
 ##### CDK deploy user
-The credentials or named profile of the AWS user or role used in the running of cdk commands e.g. <code>cdk boostrap</code> must have sufficient IAM permissions for CDK setup, like '<code>cloudFormation:CreateStack</code>', '<code>s3:CreateBucket</code>', and other CloudFormation permissions.
+The credentials or named profile of the AWS user or role used in the running of cdk commands e.g. <code>cdk bootstrap</code> must have sufficient IAM permissions for CDK setup, like '<code>cloudFormation:CreateStack</code>', '<code>s3:CreateBucket</code>', and other CloudFormation permissions.
 
 Permissions need to be granted depending on services used in the CDK script.  EC2 permissions are needed for launching, describing and terminating of EC2 instances.  As the CDK script uses assets stored in an S3 bucket, it should also have S3 permissions.
 
