@@ -204,7 +204,9 @@ Prerequisite: Create a Docker Hub account and a Docker Hub repo.  Make the repo 
 
 ### Dockerfile of Express server
 
-As TypeScript was installed as a dev dependency, run <code>npm ci && npm cache clean --force</code> to install packages in /node_modules folder first.
+As TypeScript was installed as a dev dependency, run <code>npm ci && npm cache clean --force</code> to install packages in /node_modules folder first.  
+
+<code>npm ci</code> (or <code>clean-install</code>) is preferred over <code>npm install</code> as it will install existing dependencies from the <code>package-lock.json</code> file without updating current dependencies, ensuring a reliable build for continuous integration.  As a general rule, user <code>npm ci</code> for production and <code>npm install</code> for development.  Running <code>npm cache clean --force</code> clears the cache for a clean install by clearing the packages and dependencies in the local npm cache folder e.g. ~/.npm for POSIX.
 
 Set the NODE_ENV environment variable to 'production' before running <code>npm run build</code> to compile the TypeScript code into JS. 
 
@@ -538,5 +540,9 @@ As the browser will not allow mixed media content to be served (the server is se
 [Changing ownership and permissions of ec2-user](https://stackoverflow.com/questions/27611608/ec2-user-permissions)
 
 [Adding ec2-user to group](https://stackoverflow.com/questions/72360551/adding-ec2-user-to-docker-group)
+
+[npm ci](https://docs.npmjs.com/cli/v9/commands/npm-ci)
+
+[How to clear your cache in npm](https://coder-coder.com/npm-clear-cache/)
 
 [AWS User Guide: Processing user data script](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html)
