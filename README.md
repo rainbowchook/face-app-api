@@ -11,7 +11,8 @@ Most of the source code is located in the /src directory.
 
 Main project source code and CDK scripts were written in TypeScript.  
 The API exposes /users and /images endpoints for: 
-registration, login, get user profile, get all users, delete user account, update user image entries count, and making a call to Clarifai through their GRPC client.
+CRUD operations - registration, login, get user profile, get all users, delete user account, update user image entries count; 
+and making a call to Clarifai through their GRPC client.
 
 /users/signin -> POST = success/fail (Login) 
 
@@ -73,7 +74,7 @@ A data volume in the local host environment must be mounted.
 
 A shell script or .sql scripts can be run if the directory that contains the scripts were mounted as a volume to bind to <code>docker-entrypoint-initdb.d</code> directory on the postgres container.
 
-Alternatively, just run the shell script setupDB.sh on opening an interactive shell session for the postgres docker container with the -it flags within the <code>docker run</code> command.
+Alternatively, just run the shell script setupDB.sh containining the SQL queries upon opening an interactive shell session for the postgres docker container with the -it flags within the <code>docker run</code> command.
 
 ```sql
 CREATE DATABASE $DB_NAME;
@@ -105,6 +106,18 @@ SELECT * FROM users JOIN login ON users.email = login.email;
 ```
 During registration, user records should be inserted into the <code>users</code> and <code>login</code> tables.  
 
+#### Future Enghancements/Todos
+
+The database design, while working in its current state, could be further refined.  
+
+##### 'users' table: 'userId' generated from version 4 UUID
+The auto-generated id in the <code>users</code> table is currently treated as a primary key.  Instead, a <code>userId</code> column should be a unique primary key for each record in the <code>users</code>, along with the <code>email</code> column. This arrangement makes provision for the user changing their email in the future for their user account.  
+
+The latest postgres docker image is greater than version 13, which natively supports generation of version 4 UUID through the function <code>gen_random_uuid()</code>.  
+
+##### 'login' table: 'lastLogin' timestamp and 'lastLogout' timestamp
+Introducing a <code>lastLogin</code> timestamp in the <code>login</code> table would be useful for persisting user session data.  By comparing the <code>lastLogin</code> with the session expiry set in the cookie or expiry on period of inactivity (whichever is less), the user session can be reset/refreshed or the user logged out, upon which the corresponding <code>lastLogout</code> timestamp will be updatedin the <code>login</code> table.
+
 ### CDK scripts for CloudFormation (Infrastructure as Code)
 
 Deploys a single stack from /bin/faces.cdk.project.ts, with the environment set through environment variables.
@@ -124,7 +137,22 @@ Install docker and start the docker service, which will be run in the docker gro
 
 Add the ec2-user to the docker group with <code>sudo usermod -aG docker ec2-user</code>.  This will enable the ec2-user to run <code>docker</code> commands without using <code>sudo</code>.
 
-Note that docker-compose must be installed first prior to running the docker-compose.yml asset downloaded from the S3 bucket.
+Note that docker-compose must be installed first via curl prior to running the docker-compose.yml asset downloaded from the S3 bucket.  The ec2-user should be granted execute permissions for the docker-compose binary.
+
+Environment variables for the app server and postgres database should be exported.
+
+The docker-compose file and database init script(s) should be downloaded from the S3 bucket, creating a directory for the postgres init scripts and any parent directories as needed through the -p flag in <code>mkdir -p /home/ec2-user/<app_directory>/<postgres_init-scripts></code>.
+
+Execute the command <code>docker-compose up</code> as a background process or daemon with the -d flag.  Pipe standard output and standard error to a log file for easy debugging:
+```
+docker-compose -f ${dockerComposeLocalPath} up -d > /home/ec2-user/APP/docker-compose.log 2>&1
+```
+
+As the user data script is run by the root user, change ownership of the working directory e.g. /APP, to the ec2-user user and group, as well as grant all read/write/execute permissions to the root and ec2-user group:
+```
+sudo chown -R ec2-user:ec2-user /home/ec2-user/APP
+sudo chmod -R 770 /home/ec2-user/APP
+```
 
 #### IAM roles and policies
 
@@ -496,6 +524,8 @@ As the browser will not allow mixed media content to be served (the server is se
 [How to use the Postgres Docker Official Image](https://www.docker.com/blog/how-to-use-the-postgres-docker-official-image/)
 
 [Introducing Health Check for Postgres Docker container](https://stackoverflow.com/a/71315084/20171966)
+
+[Generating a UUID in Postgres for Insert Statement](https://stackoverflow.com/questions/12505158/generating-a-uuid-in-postgres-for-insert-statement)
 
 [Planetscale Regions](https://planetscale.com/docs/concepts/regions)
 
