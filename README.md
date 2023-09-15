@@ -40,10 +40,37 @@ Routers exist in /src/routes directory for the /users and /images endpoints.
 
 Each route has route handlers located in /src/controllers.  
 
-Route handlers invoke services found in /src/services, such as database services with Knex as a bridging interface with the Postgresql database for database queries.  For this project's simple requirements, Knex was used as a query builder in conjunction with the pg database driver to connect to the database.  An ORM was not needed (see [this blog post](https://blog.logrocket.com/node-js-orms-why-shouldnt-use/)).
+Route handlers invoke services found in /src/services, such as database services with Knex as a bridging interface with the Postgresql database for database queries.  
 
 During registration, passwords are hashed with brcyptjs before storing in the <code>login</code> table in the database.
 For logins, user plaintext passwords are compared with the stored hashed password via brcypt's compare function.
+
+#### Knex
+
+For this project's simple requirements, Knex was used as a query builder in conjunction with the pg database driver to connect to the database.  [An ORM was not needed](https://blog.logrocket.com/node-js-orms-why-shouldnt-use/).
+
+When working with Knex in TypeScript, types <code>User</code> and <code>Login</code> were created to represent rows in the database tables.  Knex APIs accept <code>TRecord</code> and <code>TResult</code> type parameters, with which to specify a row in the database table and the type of the result of the query respectively.  
+
+When returning a result from the database, the Knex query builder accepts a partial type that picks a set of properties <code>Keys</code> from the result <code>Type</code> (selected columns of a table) as a type parameter e.g. <code>Pick<Todo, "title" | "completed"></code>.  The <code>TResult</code> type parameter will allow Knex to infer the result type based on the columns being selected as long as the select arguments exactly match the key  names in the record type.  
+
+Example query returning the <code>hash</code> from the <code>Login<?code> table, from /src/services/queries.ts: 
+
+```typescript
+export const getLoginHashByEmail = (email: string) => {
+  return pg
+    .select()
+    .from<Login, Pick<Login, 'hash'>>('login')
+    .where({ email })
+    .returning('hash')
+    .then((loginPassword) => loginPassword)
+    .catch((error) => {
+      console.error('Error retrieving user data: ', error)
+      throw error
+    })
+}
+```
+
+Transactions were used in the registration and delete operations as records pertaining to the user account had to be inserted/deleted from the <code>users</code> and <code>login</code> tables in one atomic transaction.
 
 #### Future Enhancements/Todos
 
@@ -122,12 +149,15 @@ Introducing a <code>lastLogin</code> timestamp in the <code>login</code> table w
 
 Deploys a single stack from /bin/faces.cdk.project.ts, with the environment set through environment variables.
 
-All source code located in /lib folder.  Assets (docker-compose file and Postgresql init script) located in /lib/assets.
+This CDK app is created from the TypeScript template.  All source code located in /lib folder.  Assets (docker-compose file and Postgresql init script) located in /lib/assets.
 
 The stack is created by calling the constructor of each construct in sequence and destructuring the instance returned as a readonly property:
-1. The VPC Construct does a lookup that dynamically returns the default VPC configurations based on the current context.
-2. The SecurityGroup Construct sets the ingress and egress rules - allowing inbound traffic only for SSH (TCP port 22), HTTP (TCP port 80) and HTTPS (TCP port 443), and allowing all outbound traffic
-3. 
+
+1. The VPC construct does a lookup that dynamically returns the default VPC configurations based on the current context.
+2. The SecurityGroup construct takes the vpc above as props and sets the ingress and egress rules - allowing inbound traffic only for SSH (TCP port 22), HTTP (TCP port 80) and HTTPS (TCP port 443), and allowing all outbound traffic
+3. The ServerRole construct is created for the EC2 instance to assume as the service principal, and is configured with customer-managed policies created earlier with the necessary permissions - EC2instance and DockerOps.  This role will be attached to the EC2 instance during the launching of the EC2 instance.
+4. The EC2SpotInstance construct receives the vpc, serverRole and server security groups as props and returns the ec2SpotInstance as a readonly property.  Its constructor invokes a new instance of custom class SpotInstance which inherits from the Instance class, receiving an extra property - launch template options for a spot instance - from within custom SpotInstanceProps that inherits from InstanceProps.
+5. The commands are added to an instance of UserData for Linux before being rendered for use in the ec2SpotInstance construct and added to the ec2SpotInstance construct.
 
 #### User Data script for EC2 instance initialisation
 
@@ -206,7 +236,7 @@ Prerequisite: Create a Docker Hub account and a Docker Hub repo.  Make the repo 
 
 As TypeScript was installed as a dev dependency, run <code>npm ci && npm cache clean --force</code> to install packages in /node_modules folder first.  
 
-<code>npm ci</code> (or <code>clean-install</code>) is preferred over <code>npm install</code> as it will install existing dependencies from the <code>package-lock.json</code> file without updating current dependencies, ensuring a reliable build for continuous integration.  As a general rule, user <code>npm ci</code> for production and <code>npm install</code> for development.  Running <code>npm cache clean --force</code> clears the cache for a clean install by clearing the packages and dependencies in the local npm cache folder e.g. ~/.npm for POSIX.
+<code>npm ci</code> (or <code>clean-install</code>) is preferred over <code>npm install</code> as it will install existing dependencies from the <code>package-lock.json</code> file without updating current dependencies, ensuring a reliable build for continuous integration.  As a general rule, use <code>npm ci</code> for production and <code>npm install</code> for development.  Running <code>npm cache clean --force</code> clears the cache for a clean install by clearing the packages and dependencies in the local npm cache folder e.g. ~/.npm for POSIX.
 
 Set the NODE_ENV environment variable to 'production' before running <code>npm run build</code> to compile the TypeScript code into JS. 
 
@@ -505,9 +535,41 @@ Port 80 will be open, thus the front-end client will make calls to http://<EC2_p
 
 As the browser will not allow mixed media content to be served (the server is serving over HTTP instead of HTTPS), all requests from the front-end client will be routed through a serverless function, deployed together with the front-end app to Vercel, thus bypassing browser restrictions.
 
+### Tests
+Tests for the app server and infrastructure not yet added.
+
 ## References
 
-[Mixed media content: Website delivers HTTPS pages but contains HTTP links](https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content/How_to_fix_website_with_mixed_content)
+### Postgres
+
+[How to use the Postgres Docker Official Image](https://www.docker.com/blog/how-to-use-the-postgres-docker-official-image/)
+
+[Introducing Health Check for Postgres Docker container](https://stackoverflow.com/a/71315084/20171966)
+
+[Generating a UUID in Postgres for Insert Statement](https://stackoverflow.com/questions/12505158/generating-a-uuid-in-postgres-for-insert-statement)
+
+### Knex
+
+[Knex Guide regarding TypeScript](https://knexjs.org/guide/#typescript)
+
+[Knex Query Builder Guide for select query](https://knexjs.org/guide/query-builder.html#select)
+
+[Knex Transactions](https://knexjs.org/guide/transactions.html)
+
+### Docker
+
+[User-defined bridges provide automatic DNS resolution between containers](https://docs.docker.com/network/drivers/bridge/)
+
+[Docker Compose Environment variables](https://docs.docker.com/compose/environment-variables/envvars-precedence/)
+
+[Docker Compose specifications for services](https://docs.docker.com/compose/compose-file/05-services/)
+
+[Docker Compose commandline reference: docker compose up](https://docs.docker.com/engine/reference/commandline/compose_up/)
+
+[Resolve warning the requested image platform linux amd64 does not match the detected host platform linux arm64](https://devcoops.com/resolve-warning-the-requested-image-platform-linux-amd64-does-not-match-the-detected-host-platform-linux-arm64-v8/)
+
+
+### AWS
 
 [AWS CLI Amazon ECR Public/Docker Getting Started User Guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-docker.html)
 
@@ -521,16 +583,6 @@ As the browser will not allow mixed media content to be served (the server is se
 
 [Processing EC2 user data script](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html)
 
-[EC2 Spot Instance Pricing](https://aws.amazon.com/ec2/spot/pricing/)
-
-[How to use the Postgres Docker Official Image](https://www.docker.com/blog/how-to-use-the-postgres-docker-official-image/)
-
-[Introducing Health Check for Postgres Docker container](https://stackoverflow.com/a/71315084/20171966)
-
-[Generating a UUID in Postgres for Insert Statement](https://stackoverflow.com/questions/12505158/generating-a-uuid-in-postgres-for-insert-statement)
-
-[Planetscale Regions](https://planetscale.com/docs/concepts/regions)
-
 [Running Docker on AWS EC2](https://medium.com/appgambit/part-1-running-docker-on-aws-ec2-cbcf0ec7c3f8)
 
 [Install docker-compose in Amazon Linux 2 EC2 instance](https://stackoverflow.com/questions/63708035/installing-docker-compose-on-amazon-ec2-linux-2-9kb-docker-compose-file)
@@ -541,8 +593,32 @@ As the browser will not allow mixed media content to be served (the server is se
 
 [Adding ec2-user to group](https://stackoverflow.com/questions/72360551/adding-ec2-user-to-docker-group)
 
+[AWS User Guide: Processing user data script](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html)
+
+[AWS EC2 User Guide IAM Roles for Amazon EC2](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html#attach-iam-role)
+
+[EC2 Spot Instance Pricing](https://aws.amazon.com/ec2/spot/pricing/)
+
+[Autoscaling using spot instances](https://dev.to/aws-builders/autoscaling-using-spot-instances-with-aws-cdk-ts-4hgh)
+
+[EC2 instance with ingress rules in its security group](https://dev.to/aws-builders/autoscaling-using-spot-instances-with-aws-cdk-ts-4hgh)
+
+[Attribute-based instance type selection(ABS) using Launch Templates to specify instance requirements for Auto-Scaling and EC2 Fleet](https://aws.amazon.com/blogs/aws/new-attribute-based-instance-type-selection-for-ec2-auto-scaling-and-ec2-fleet/)
+
+[AWS Configuring Profile](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html)
+
+### Others
+
 [npm ci](https://docs.npmjs.com/cli/v9/commands/npm-ci)
 
 [How to clear your cache in npm](https://coder-coder.com/npm-clear-cache/)
 
-[AWS User Guide: Processing user data script](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html)
+[TypeScript Utility Types](https://www.typescriptlang.org/docs/handbook/utility-types.html)
+
+[Using curl verbose](https://everything.curl.dev/usingcurl/verbose)
+
+[Mixed media content: Website delivers HTTPS pages but contains HTTP links](https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content/How_to_fix_website_with_mixed_content)
+
+[Planetscale Regions](https://planetscale.com/docs/concepts/regions)
+
+
