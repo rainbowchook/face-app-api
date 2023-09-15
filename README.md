@@ -143,7 +143,8 @@ The auto-generated id in the <code>users</code> table is currently treated as a 
 The latest postgres docker image is greater than version 13, which natively supports generation of version 4 UUID through the function <code>gen_random_uuid()</code>.  
 
 ##### 'login' table: 'lastLogin' timestamp and 'lastLogout' timestamp
-Introducing a <code>lastLogin</code> timestamp in the <code>login</code> table would be useful for persisting user session data.  By comparing the <code>lastLogin</code> with the session expiry set in the cookie or expiry on period of inactivity (whichever is less), the user session can be reset/refreshed or the user logged out, upon which the corresponding <code>lastLogout</code> timestamp will be updatedin the <code>login</code> table.
+Introducing a <code>lastLogin</code> timestamp in the <code>login</code> table would be useful for persisting user session data.  By comparing the <code>lastLogin</code> with the session expiry set in the cookie or expiry on period of inactivity (whichever is less), the user session can be reset/refreshed or the user logged out, upon which the corresponding <code>lastLogout</code> timestamp will be updatedin the <code>login</code> table. 
+(Note: This change will require modifications to the front-end for the user session logout to be effected).
 
 ### CDK scripts for CloudFormation (Infrastructure as Code)
 
@@ -156,8 +157,26 @@ The stack is created by calling the constructor of each construct in sequence an
 1. The VPC construct does a lookup that dynamically returns the default VPC configurations based on the current context.
 2. The SecurityGroup construct takes the vpc above as props and sets the ingress and egress rules - allowing inbound traffic only for SSH (TCP port 22), HTTP (TCP port 80) and HTTPS (TCP port 443), and allowing all outbound traffic
 3. The ServerRole construct is created for the EC2 instance to assume as the service principal, and is configured with customer-managed policies created earlier with the necessary permissions - EC2instance and DockerOps.  This role will be attached to the EC2 instance during the launching of the EC2 instance.
-4. The EC2SpotInstance construct receives the vpc, serverRole and server security groups as props and returns the ec2SpotInstance as a readonly property.  Its constructor invokes a new instance of custom class SpotInstance which inherits from the Instance class, receiving an extra property - launch template options for a spot instance - from within custom SpotInstanceProps that inherits from InstanceProps.
+4. The EC2SpotInstance construct receives the vpc, serverRole and server security groups as props and returns the ec2SpotInstance as a readonly property.  Its constructor invokes a new instance of custom class SpotInstance which inherits from the Instance class, receiving an extra property - launchTemplateSpotOptions - from within custom SpotInstanceProps that inherits from InstanceProps.  
 5. The commands are added to an instance of UserData for Linux before being rendered for use in the ec2SpotInstance construct and added to the ec2SpotInstance construct.
+
+#### EC2 Spot Instance
+
+The launch template specifies the instance requirements based on a list of attributes.  It specifies the instance type to be a t2.micro instance with the latest Amazon Linux 2 image.  It also specifies an existing key pair for SSH connections to the EC2 instance launched.  
+
+Spot options set the max price to USD 0.005 (market price depends on the AWS region), with requirements to request once only and to terminate the EC2 spot instance on interruption i.e. max spot price exceeded or a <code>cdk destroy</code> command was issued to tear down the stack and all resources in it, such as the EC2 Spot Instance. 
+
+Note: This launchTemplateSpotOptions parameter combination of <code>interruptionBehavior</code> and <code>requestType</code> is valid: 
+```typescript
+const launchTemplateSpotOptions: LaunchTemplateSpotOptions = {
+  // blockDuration: Duration.hours(2),
+  interruptionBehavior: SpotInstanceInterruption.TERMINATE,
+  maxPrice: 0.005,
+  requestType: SpotRequestType.ONE_TIME,
+  // validUntil: Expiration.after(Duration.minutes(30)), // Invalid Parameter Combination: validUntil cannot be specified when the SpotRequestType is set to 'one-time';
+}
+```
+For a one-time spot request and interruption behavior set to 'terminate', <code>blockDuration</code> and <code>validUntil</code> cannot be included in the spot options parameter combination.
 
 #### User Data script for EC2 instance initialisation
 
@@ -226,7 +245,8 @@ If the stack cannot be torn down automatically, it must be destroyed manually.  
 
 #### Design decisions 
 1. Instead of using readFileSync for /scripts/user-data.sh and adding it to the EC2 Spot Instance with .addUserData(userData), commands were added to the instance user data using the .addCommands() and addS3DownloadCommand() methods from UserData class for Amazon Linux AMI.  All commands were rendered and added to the EC2 Spot Instance through addUserData(userData.render()).
-2. Environment variables from GitHub Actions secrets were referenced in the user data script and exported into the EC2 instance.  The GitHub Actions logs appropriately masks environment variables injected at runtime.  Loading the environment variables into SSM Parameter Store or loading a file in the S3 bucket encrypted with KMS would have been redundant. (This will require modifications to the front-end for the user session logout to be effected).
+2. Environment variables from GitHub Actions secrets were referenced in the user data script and exported into the EC2 instance.  The GitHub Actions logs appropriately masks environment variables injected at runtime.  Loading the environment variables into the SSM Parameter Store or Secrets Manager, or loading a file in the S3 bucket encrypted with KMS would have been redundant. The use of the Secrets Manager in particular would have been the most cost-prohibitive.
+3. The most cost-effective solution was considered based on the simplicity of the project requirements.  The stack created utilised minimal resources: a single EC2 Spot Instance is created in the stack with a pre-determined max price in the spot options of the launch template. If the market price goes beyond the set max price, the instance will be terminated, as a one-time spot instance type was requested and based on the interruption behaviour. However, horizontal scaling can be introduced by specifying the min, max and desired capacity of EC2 Spot instances to launch by means of an AutoScaling Group (AG) fronted by an Internet-facing Application Load Balancer (ALB).  In that case, the existing deployment strategy would need to be modified to a microservices architecture - the Postgres database docker container would have to run in its own EC2 instance while the express app server container would run in its own EC2 instance and the number of instances scaled according to demand by the AG.  The ALB will incoming traffic to  available app servers with capacity to handle the load.
 
 ## Dockerisation 
 
@@ -571,15 +591,23 @@ Tests for the app server and infrastructure not yet added.
 
 ### AWS
 
+#### AWS CLI
+
 [AWS CLI Amazon ECR Public/Docker Getting Started User Guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-docker.html)
 
 [AWS CLI Authenticate with short-term credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-authentication-short-term.html)
 
-[AWS CDK v2 Getting Started and Bootstrapping](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html#getting_started_bootstrap)
+#### Profiles / Shared config and credentials files
 
-[CDK Bootstrapping](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html)
+[AWS Configuring Profile](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html)
 
-[Guide to Working with CDK in TypeScript](https://docs.aws.amazon.com/cdk/v2/guide/work-with-cdk-typescript.html)
+[AWS Shared config and credentials files format](https://docs.aws.amazon.com/sdkref/latest/guide/file-format.html)
+
+[Supported SDKs and tools that use the shared config and credentials files](https://docs.aws.amazon.com/sdkref/latest/guide/supported-sdks-tools.html)
+
+#### Amazon EC2
+
+[Using roles for applications on Amazon EC2 - Using Instance Profiles](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2_instance-profiles.html)
 
 [Processing EC2 user data script](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html)
 
@@ -599,13 +627,55 @@ Tests for the app server and infrastructure not yet added.
 
 [EC2 Spot Instance Pricing](https://aws.amazon.com/ec2/spot/pricing/)
 
-[Autoscaling using spot instances](https://dev.to/aws-builders/autoscaling-using-spot-instances-with-aws-cdk-ts-4hgh)
-
-[EC2 instance with ingress rules in its security group](https://dev.to/aws-builders/autoscaling-using-spot-instances-with-aws-cdk-ts-4hgh)
+[AWS EC2 Key Pairs for SSH Connections](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html)
 
 [Attribute-based instance type selection(ABS) using Launch Templates to specify instance requirements for Auto-Scaling and EC2 Fleet](https://aws.amazon.com/blogs/aws/new-attribute-based-instance-type-selection-for-ec2-auto-scaling-and-ec2-fleet/)
 
-[AWS Configuring Profile](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html)
+[How to Create Spot Instance in AWS EC2 in the AWS Management Console](https://www.geeksforgeeks.org/how-to-create-spot-instance-in-aws-ec2-in-aws-latest-wizards/)
+
+[AWS Overview of Amazon EC2 Spot Instance: How to Request Spot Instances](https://docs.aws.amazon.com/whitepapers/latest/cost-optimization-leveraging-ec2-spot-instances/how-to-request-spot-instances.html)
+
+[AWS EC2 API Reference for RunInstances action](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_RunInstances.html)
+
+[AWS EC2 User Guide to launching EC2 using a launch template](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html)
+
+#### CDK
+
+[CDK Bootstrapping](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html)
+
+[AWS CDK v2 Getting Started and Bootstrapping](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html#getting_started_bootstrap)
+
+[Guide to Working with CDK in TypeScript](https://docs.aws.amazon.com/cdk/v2/guide/work-with-cdk-typescript.html)
+
+[CDK API v2 reference: aws-cdk-lib AWS EC2 InstanceProps](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_ec2.InstanceProps.html)
+
+[CDK API v2 reference: aws-cdk-lib AWS EC2 InstanceType](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_ec2.InstanceType.html)
+
+[CDK API v2 reference: aws-cdk-lib AWS EC2 LaunchTemplateSpotOptions](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_ec2.LaunchTemplateSpotOptions.html)
+
+[CDK API v2 reference: aws-cdk-lib/aws-ec2 module for setting up networking and instances](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_ec2-readme.html)
+
+[CDK API v2 reference: aws-cdk-lib/aws-ec2 module - Allowing Connections](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_ec2-readme.html#allowing-connections)
+
+[CDK Guide to Assets](https://docs.aws.amazon.com/cdk/v2/guide/assets.html)
+
+[EC2 instance with ingress rules in its security group](https://dev.to/aws-builders/autoscaling-using-spot-instances-with-aws-cdk-ts-4hgh)
+
+[How to create an EC2 with VPC in CDK](https://edwinradtke.com/ec2vpc)
+
+[Autoscaling using spot instances](https://dev.to/aws-builders/autoscaling-using-spot-instances-with-aws-cdk-ts-4hgh)
+
+[CDK Bootstrapping](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html)
+
+[Guide to Working with CDK in TypeScript](https://docs.aws.amazon.com/cdk/v2/guide/work-with-cdk-typescript.html)
+
+[AWS Labs GitHub Default VPC EC2 stack](https://github.com/benoitpaul/aws-labs/blob/main/default-vpc-ec2/lib/default-vpc-ec2-stack.ts)
+
+[Diving Deep into EC2 Spot Instace Cost and Operational Practices](https://aws.amazon.com/pt/blogs/compute/diving-deep-into-ec2-spot-instance-cost-and-operational-practices/)
+
+#### Other AWS resources
+
+[AWS Guide to Reference Amazon Resource Names(ARNs)](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference-arns.html)
 
 ### Others
 
