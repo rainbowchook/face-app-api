@@ -57,7 +57,7 @@ When working with Knex in TypeScript, types <code>User</code> and <code>Login</c
 
 When returning a result from the database, the Knex query builder accepts a partial type that picks a set of properties <code>Keys</code> from the result <code>Type</code> (selected columns of a table) as a type parameter e.g. <code>Pick<Todo, "title" | "completed"></code>.  The <code>TResult</code> type parameter will allow Knex to infer the result type based on the columns being selected as long as the select arguments exactly match the key  names in the record type.  
 
-Example query returning the <code>hash</code> from the <code>Login<?code> table, from /src/services/queries.ts: 
+Example query returning the <code>hash</code> from the <code>Login</code> table, from /src/services/queries.ts: 
 
 ```typescript
 export const getLoginHashByEmail = (email: string) => {
