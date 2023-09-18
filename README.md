@@ -47,7 +47,14 @@ For logins, user plaintext passwords are compared with the stored hashed passwor
 
 #### Clarifai GRPC Client
 
+The Clarifai gRPC client connects over HTTP/2, which features are still unsupported on the browser client.  Use of the gRPC client was recommended by Clarifai over connecting via HTTP+JSON through the front-end app.  Benefits of using gRPC include:
 
+1. Increased throughput/reduced network constraint: gRPC Protobuf-encoded binary messages result in smaller payloads that serialiase quickly on server and client; and HTTP/2 protocol allows multiplexing of multiple HTTP/2 calls over a single TCP connection.
+2. Prescriptive gRPC specification about the format that a gRPC service must follow, ensuring consistency across platforms and implementations.  Clients can also specify request timeouts.
+3. Code generation from the gRPC client is strongly typed, eliminating duplication of messages during the creation of RESTful JSON Web API (in this case /images endpoint); consequently, additional tooling is required to analyse Protobuf payloads and to compose requests by hand - the increased complexity adding to development time.
+4. Supports real-time bi-directional streaming, though only unary streaming was used in this project.
+
+Making predictions on image inputs 
 
 #### Knex
 
@@ -575,48 +582,33 @@ Tests for the app server and infrastructure not yet added.
 ### Express
 
 [Use TypeScript to build a Node API with Express](https://developer.okta.com/blog/2018/11/15/node-express-typescript)
-
 [How to set up TypeScript with Node.js and Express](https://blog.logrocket.com/how-to-set-up-node-typescript-express/)
-
 [How to use Express in TypeScript](https://www.geeksforgeeks.org/how-to-use-express-in-typescript/)
-
 [Error can't set headers after they are sent to the client](https://stackoverflow.com/questions/7042340/error-cant-set-headers-after-they-are-sent-to-the-client)
 
 ### Clarifai
 
 [Clarifai Face-Sentiment Multi-Modal Workflow combining face detection and sentiment classifications of 7 concepts](https://clarifai.com/clarifai/main/workflows/Face-Sentiment)
-
 [Clarifai NodeJS gRPC Client](https://github.com/Clarifai/clarifai-nodejs-grpc)
-
 [Clarifai API Client Installation](https://docs.clarifai.com/api-guide/api-overview/api-clients/)
-
 [Clarifai use of gRPC over HTTP/2 preferred over that of HTTTPS+JSON channel - calling a gRPC service from the server rather than the browser client](https://docs.clarifai.com/api-guide/api-overview/api-clients/grpc-vs-http-channels)
-
 [Clarifai Predict Images via URL](https://docs.clarifai.com/api-guide/predict/images/)
-
 [Clarifai NodeJS Tutorial](https://docs.clarifai.com/tutorials/node-js-tutorial) 
-
 [Clarifai Make Model Predictions in your workflows](https://docs.clarifai.com/api-guide/workflows/common-workflows/workflow-predict/)
+[Clarifai/main app: models and workflows built by Clarifai - Visual Classifiers, Moderation, Visual Classifiers](https://clarifai.com/clarifai/main)
 
 ### Postgres
 
 [Postgresql System Queries](https://razorsql.com/articles/postgresql_system_queries.html)
-
 [Postgresql Tutorial: Postgresql integer](https://www.postgresqltutorial.com/postgresql-tutorial/postgresql-integer/)
-
 [In Postgresql version 15 and above: Only the database owner can create objects in the public schema](https://www.cybertec-postgresql.com/en/error-permission-denied-schema-public/)
-
 [How to Set the Default User Password in Postgresql](https://chartio.com/resources/tutorials/how-to-set-the-default-user-password-in-postgresql/)
-
 [Generating a UUID in Postgres for Insert Statement](https://stackoverflow.com/questions/12505158/generating-a-uuid-in-postgres-for-insert-statement)
-
 
 ### Knex
 
 [Knex Guide regarding TypeScript](https://knexjs.org/guide/#typescript)
-
 [Knex Query Builder Guide for select query](https://knexjs.org/guide/query-builder.html#select)
-
 [Knex Transactions](https://knexjs.org/guide/transactions.html)
 
 ### Docker
@@ -624,49 +616,33 @@ Tests for the app server and infrastructure not yet added.
 #### Docker Build
 
 [How to Build a NodeJS Application with Docker](https://www.digitalocean.com/community/tutorials/how-to-build-a-node-js-application-with-docker)
-
 [Dockerising a NodeJS Web App](https://nodejs.org/en/docs/guides/nodejs-docker-webapp)
-
 [Node Docker Good Defaults](https://github.com/BretFisher/node-docker-good-defaults/blob/69c923bc646bc96003e9ada55d1ec5ca943a1b19/test/sample.js)
 
 #### Postgres Docker
 
 [How to use the Postgres Docker Official Image](https://www.docker.com/blog/how-to-use-the-postgres-docker-official-image/)
-
 [Docker Compose and Create DB in postgres on init](https://stackoverflow.com/questions/59715622/docker-compose-and-create-db-in-postgres-on-init)
-
 [Docker entrypoint initdb Permission Denied](https://stackoverflow.com/a/68288835/20171966)
-
 [Docker Postgres db init scripts ignored when data volume not empty - shutdown initiated before server read to accept connections](https://gist.github.com/onjin/2dd3cc52ef79069de1faa2dfd456c945)
-
 [Docker Postgresql image's docker-entrypoing.sh](https://github.com/docker-library/postgres/blob/master/docker-entrypoint.sh#L327)
-
 [Docker Postgres Shuts Down immediately When Started with Docker Compose](https://stackoverflow.com/questions/37259584/postgres-shuts-down-immediately-when-started-with-docker-compose)
-
 [Introducing Health Check for Postgres Docker container to delay shutdown so that db init script(s) will finish running](https://stackoverflow.com/a/71315084/20171966)
-
 [User-defined bridges provide automatic DNS resolution between containers: DB_HOST should be postgres container name](https://docs.docker.com/network/drivers/bridge/)
 
 #### Docker Compose
 
 [Docker Compose Environment variables](https://docs.docker.com/compose/environment-variables/envvars-precedence/)
-
 [Docker Compose specifications for services](https://docs.docker.com/compose/compose-file/05-services/)
-
 [Docker Compose Networks top-level element](https://docs.docker.com/compose/compose-file/06-networks/)
-
 [Docker Compose commandline reference: docker compose up](https://docs.docker.com/engine/reference/commandline/compose_up/)
-
 [Docker Compose down with a non-default yml file name](https://stackoverflow.com/questions/48717646/docker-compose-down-with-a-non-default-yml-file-name)
-
 [Variables in Docker Compose](https://www.codementor.io/@dhananjaykumar/variables-in-docker-compose-21argqci24)
 
 #### Others
 
 [Add $PWD before local file directory path for Mac](https://stackoverflow.com/a/69501793)
-
 [Resolve warning the requested image platform linux amd64 does not match the detected host platform linux arm64](https://devcoops.com/resolve-warning-the-requested-image-platform-linux-amd64-does-not-match-the-detected-host-platform-linux-arm64-v8/)
-
 [Introduction to Docker Secrets - only works in swarm mode](https://www.baeldung.com/ops/docker-secrets)
 
 ### AWS
@@ -674,161 +650,92 @@ Tests for the app server and infrastructure not yet added.
 #### AWS CLI
 
 [AWS CLI Amazon ECR Public/Docker Getting Started User Guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-docker.html)
-
 [AWS CLI Authenticate with short-term credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-authentication-short-term.html)
 
 #### Profiles / Shared config and credentials files
 
 [AWS User Guide: Use an IAM role in the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-role.html)
-
 [AWS Configuring Profile](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html)
-
 [AWS Shared config and credentials files format](https://docs.aws.amazon.com/sdkref/latest/guide/file-format.html)
-
 [Supported SDKs and tools that use the shared config and credentials files](https://docs.aws.amazon.com/sdkref/latest/guide/supported-sdks-tools.html)
 
 #### Amazon EC2
 
 [Using roles for applications on Amazon EC2 - Using Instance Profiles](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2_instance-profiles.html)
-
 [Run commands on your Linux instance at launch](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html)
-
 [Running Docker on AWS EC2](https://medium.com/appgambit/part-1-running-docker-on-aws-ec2-cbcf0ec7c3f8)
-
 [Install docker-compose in Amazon Linux 2 EC2 instance](https://stackoverflow.com/questions/63708035/installing-docker-compose-on-amazon-ec2-linux-2-9kb-docker-compose-file)
-
 [Install docker compose from the EC2 user data script](https://stackoverflow.com/a/72156137)
-
 [How to install docker on EC2 and Create a container](https://medium.com/@mehmetodabashi/how-to-install-docker-on-ec2-and-create-a-container-75ca88e342d2)
-
 [Creating a File System on EBS and Volume Mounting it to an EC2 instance and persisting data](https://stackoverflow.com/questions/70228792/creating-a-file-system-on-ebs-volume-mounting-it-to-ec2-instance-and-persisting)
-
 [AWS LAMP Amazon Linux 2 Guide: Setting ec2-user to a group and permissions](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-lamp-amazon-linux-2.html)
-
 [Changing ownership and permissions of ec2-user](https://stackoverflow.com/questions/27611608/ec2-user-permissions)
-
 [Adding ec2-user to group](https://stackoverflow.com/questions/72360551/adding-ec2-user-to-docker-group)
-
 [AWS User Guide: Run commands at launch with user data script](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html)
-
 [AWS EC2 User Guide IAM Roles for Amazon EC2](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html#attach-iam-role)
-
 [EC2 Spot Instance Pricing](https://aws.amazon.com/ec2/spot/pricing/)
-
 [AWS EC2 Key Pairs for SSH Connections](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html)
-
 [Attribute-based instance type selection(ABS) using Launch Templates to specify instance requirements for Auto-Scaling and EC2 Fleet](https://aws.amazon.com/blogs/aws/new-attribute-based-instance-type-selection-for-ec2-auto-scaling-and-ec2-fleet/)
-
 [How to Create Spot Instance in AWS EC2 in the AWS Management Console](https://www.geeksforgeeks.org/how-to-create-spot-instance-in-aws-ec2-in-aws-latest-wizards/)
-
 [AWS Overview of Amazon EC2 Spot Instance: How to Request Spot Instances](https://docs.aws.amazon.com/whitepapers/latest/cost-optimization-leveraging-ec2-spot-instances/how-to-request-spot-instances.html)
-
 [AWS EC2 API Reference for RunInstances action](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_RunInstances.html)
-
 [AWS EC2 User Guide: Launching EC2 using a launch template](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html)
-
 [AWS EC2 User Guide: Creating Launch Template](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-launch-template.html)
-
 [AWS EC2 User Guide: Using Spot Instances](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-spot-instances.html)
-
 [AWS EC2 User Guide: Spot Request Examples (Example launch specifications)](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-request-examples.html)
 
 #### CDK
 
 [Your First AWS CDK App](https://docs.aws.amazon.com/cdk/v2/guide/hello_world.html)
-
 [CDK Bootstrapping](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html)
-
 [AWS CDK v2 Getting Started and Bootstrapping](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html#getting_started_bootstrap)
-
 [Guide to Working with CDK in TypeScript](https://docs.aws.amazon.com/cdk/v2/guide/work-with-cdk-typescript.html)
-
 [CDK Concepts: Environments](https://docs.aws.amazon.com/cdk/v2/guide/environments.html)
-
 [CDK API v2 reference: aws-cdk-lib AWS EC2 InstanceProps](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_ec2.InstanceProps.html)
-
 [CDK API v2 reference: aws-cdk-lib AWS EC2 InstanceType](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_ec2.InstanceType.html)
-
 [CDK API v2 reference: aws-cdk-lib AWS EC2 LaunchTemplateSpotOptions](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_ec2.LaunchTemplateSpotOptions.html)
-
 [CDK API v2 reference: aws-cdk-lib/aws-ec2 module for setting up networking and instances](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_ec2-readme.html)
-
 [CDK API v2 reference: aws-cdk-lib/aws-ec2 module - Allowing Connections](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_ec2-readme.html#allowing-connections)
-
 [CDK Guide to Assets](https://docs.aws.amazon.com/cdk/v2/guide/assets.html)
-
 [CDK aws-s3-deployment: Transfer asset without extracting contents of .zip files - assets in a directory are zipped when downloaded](https://github.com/aws/aws-cdk/issues/8065)
-
 [EC2 instance with ingress rules in its security group](https://dev.to/aws-builders/autoscaling-using-spot-instances-with-aws-cdk-ts-4hgh)
-
 [How to create an EC2 with VPC in CDK](https://edwinradtke.com/ec2vpc)
-
 [AWS Samples: Single EC2 CDK](https://github.com/aws-samples/single-ec2-cdk)
-
 [Autoscaling using spot instances](https://dev.to/aws-builders/autoscaling-using-spot-instances-with-aws-cdk-ts-4hgh)
-
 [CDK Bootstrapping](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html)
-
 [AWS CDK EC2 instance Example](https://bobbyhadz.com/blog/aws-cdk-ec2-instance-example)
-
 [AWS CDK EC2 User Data Example](https://bobbyhadz.com/blog/aws-cdk-ec2-userdata-example/)
-
 [AWS CDK Tutorial TypeScript](https://bobbyhadz.com/blog/aws-cdk-tutorial-typescript)
-
 [AWS CDK Get Region and AccountId with Stack API - explicitly setting context to resolve values at synthesis time rather than deployment time](https://bobbyhadz.com/blog/cdk-get-region-accountid)
-
 [Vpc.fromLookup can't determine region - need to explicitly set the env](https://github.com/aws/aws-cdk/issues/4846)
-
 [Guide to Working with CDK in TypeScript](https://docs.aws.amazon.com/cdk/v2/guide/work-with-cdk-typescript.html)
-
 [AWS Labs GitHub Default VPC EC2 stack](https://github.com/benoitpaul/aws-labs/blob/main/default-vpc-ec2/lib/default-vpc-ec2-stack.ts)
-
 [Run docker compose in EC2 User Data](https://stackoverflow.com/questions/63153521/run-docker-compose-in-ec2-user-data)
-
 [Deploying AWS CDK With Github Actions](https://www.youtube.com/watch?v=KCp6BmUGBHc&t=2s&ab_channel=MichaelLevan)
-
 [Integrating AWS CDK into GitHub Actions](https://johntipper.org/integrating-aws-cdk-into-github-actions/)
 
 #### Other AWS resources
 
 [Diving Deep into EC2 Spot Instace Cost and Operational Practices](https://aws.amazon.com/pt/blogs/compute/diving-deep-into-ec2-spot-instance-cost-and-operational-practices/)
-
 [AWS Guide to Reference Amazon Resource Names(ARNs)](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference-arns.html)
-
 [How can I attach a persistent EBS Volume to an EC2 Linux launch template that is used in an autoscaling group?](https://stackoverflow.com/questions/71227777/how-can-i-attach-a-persistent-ebs-volume-to-an-ec2-linux-launch-template-that-is)
-
 [How can I automatically attach a persistent secondary EBS Volume to a new EC2 Linux Spot Instance at boot?](https://repost.aws/knowledge-center/ec2-linux-spot-instance-attach-ebs-volume)
-
 [Creating a file system on EBS Volume, mounting it to EC2 instance and persisting data when instance is replaced with CDK](https://stackoverflow.com/questions/70228792/creating-a-file-system-on-ebs-volume-mounting-it-to-ec2-instance-and-persisting)
-
 [AWS EC2 User Guide: Make an Amazon EBS volume available for use on Linux](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-using-volumes.html)
-
 
 ### Others
 
 [npm ci](https://docs.npmjs.com/cli/v9/commands/npm-ci)
-
 [How to clear your cache in npm](https://coder-coder.com/npm-clear-cache/)
-
 [Chown command in Linux (with examples)](https://linuxopsys.com/topics/chown-command-in-linux)
-
 [TypeScript Utility Types](https://www.typescriptlang.org/docs/handbook/utility-types.html)
-
 [TypeScript 2.0  non-null assertion operator](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-0.html#non-null-assertion-operator)
-
 [Using curl verbose](https://everything.curl.dev/usingcurl/verbose)
-
 [NTU HowTo guide on Environment Variables](https://www3.ntu.edu.sg/home/ehchua/programming/howto/Environment_Variables.html#zz-3.)
-
 [Mixed media content: Website delivers HTTPS pages but contains HTTP links](https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content/How_to_fix_website_with_mixed_content)
-
 [Let's Encrypt Getting Started](https://letsencrypt.org/getting-started/)
-
 [Planetscale Regions](https://planetscale.com/docs/concepts/regions)
-
 [GitHub Actions: 'No such file or directory' on run due to not checking out repo first](https://stackoverflow.com/questions/64405836/github-actions-no-such-file-or-directory-on-any-run-step?rq=3)
-
 [GitHub Actions: Adding a status badge](https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/adding-a-workflow-status-badge)
-
 [Getting Started with Writing and Formatting on GitHub: Basic Writing and Formatting Syntax](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#images)
 
