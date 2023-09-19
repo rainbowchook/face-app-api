@@ -15,7 +15,7 @@ The Express server was dockerised and the Docker Image found here: [https://hub.
 
 ![Manual CDK Deployment status](https://github.com/rainbowchook/face-app-api/actions/workflows/aws-cdk-ec2.yml/badge.svg)
 
-This project has been successfully deployed to an AWS EC2 Spot Instance by a manually triggered GitHub Actions worflow using AWS CDK.  Each deployment will result in a different public address.  To save cost, the CloudFormation stack is torn down each time after testing.
+This project has been successfully deployed to an AWS EC2 Spot Instance by a manually triggered GitHub Actions workflow using AWS CDK.  Each deployment will result in a different public address.  To save cost, the CloudFormation stack is torn down each time after testing.
 
 ## Available scripts
 
