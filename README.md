@@ -9,10 +9,14 @@ Most of the source code is located in the /src directory.
 
 ## Available scripts
 
-Build script to compile TypeScript code in JS, and build script in watch mode:
+Build script to compile TypeScript code in JS:
 
 ```
 npm run build
+```
+
+Build script in watch mode
+```
 npm run start:build
 ```
 
