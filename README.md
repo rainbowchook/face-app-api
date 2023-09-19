@@ -748,6 +748,8 @@ Tests for the app server and infrastructure not yet added.
 
 [Introduction to Docker Secrets - only works in swarm mode](https://www.baeldung.com/ops/docker-secrets)
 
+[Kubernetes vs Docker Compose: What's the Difference?](https://www.theserverside.com/blog/Coffee-Talk-Java-News-Stories-and-Opinions/What-is-Kubernetes-vs-Docker-Compose-How-these-DevOps-tools-compare)
+
 ### AWS
 
 #### AWS CLI
