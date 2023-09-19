@@ -3,9 +3,10 @@
 ## Description
 This is the back-end part of a full-stack PERN application for detecting faces and their corresponding emotions within an image.  Logged-in user can submit images for face and emotions detection, with each submission updated in the database for tracking number of image entries.
 
-API for face-app client located at [https://github.com/rainbowchook/face-app](https://github.com/rainbowchook/face-app)
+The source code for the app server is located in the /src directory.  The CDK project is located in /faces-cdk-project. Other config and docker files are located in the project root / directory.
 
-Most of the source code is located in the /src directory.  
+API for face-app client located at [https://github.com/rainbowchook/face-app](https://github.com/rainbowchook/face-app)
+The deployed front-end app is located at [https://face-app-lilac.vercel.app/](https://face-app-lilac.vercel.app/)
 
 ## Available scripts
 
