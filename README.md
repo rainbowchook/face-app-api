@@ -123,7 +123,7 @@ Model predictions on image inputs can be made from image URLs or bytes.  For thi
 
 1. TypeScript [Optional Chaining](https://stackoverflow.com/a/15260828) was utilised a lot as the <code>getStatus()</code> method of the <code>response</code> object may return <code>undefined</code> (from the type definition).  
 
-2. The Clarifai documentation with regards to its gRPC implementation was more , so the code was cobbled together through much use of <code>console.log</code>, manually checking the type definition files through the VSCode IDE, and sifting through the provided example JSON output files for the face-sentiment detection workflow found in the Clarifai user's app dashboard.  
+2. The Clarifai documentation with regards to its gRPC implementation was hard to find, so the code was cobbled together through much use of <code>console.log</code>, manually checking the type definition files through the VSCode IDE, and sifting through the provided example JSON output files for the face-sentiment detection workflow found in the Clarifai user's app dashboard.  
 
 #### Knex
 
