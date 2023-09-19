@@ -7,8 +7,6 @@ API for face-app client located at [https://github.com/rainbowchook/face-app](ht
 
 Most of the source code is located in the /src directory.  
 
-![Clarifai Nodejs GRPC](https://github.com/Clarifai/clarifai-nodejs-grpc)
-
 ## Available scripts
 
 Build script to compile TypeScript code in JS, and build script in watch mode:
