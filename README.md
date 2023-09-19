@@ -213,7 +213,7 @@ SELECT * FROM users JOIN login ON users.email = login.email;
 ```
 During registration, user records should be inserted into the <code>users</code> and <code>login</code> tables.  
 
-#### Future Enghancements/Todos
+#### Future Enhancements/Todos
 
 The database design, while working in its current state, could be further refined.  
 
