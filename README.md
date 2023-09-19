@@ -7,6 +7,33 @@ API for face-app client located at [https://github.com/rainbowchook/face-app](ht
 
 Most of the source code is located in the /src directory.  
 
+## Available scripts
+
+Build script to compile TypeScript code in JS, and build script in watch mode:
+
+```
+npm run build
+npm run start:build
+```
+
+Development run script to be used after build step:
+```
+npm run start:run
+```
+
+Development run script to be executed after building:
+```
+npm run start:dev
+```
+
+Production run script:
+```
+npm run start
+```
+
+### Enhancement/Todo
+Instead of using the <code>concurrently</code> npm package to build and run, <code>tsnode</code> could have been used instead.
+
 ## Technical Description
 
 Main project source code and CDK scripts were written in TypeScript.  
@@ -45,16 +72,44 @@ Route handlers invoke services found in /src/services, such as database services
 During registration, passwords are hashed with brcyptjs before storing in the <code>login</code> table in the database.
 For logins, user plaintext passwords are compared with the stored hashed password via brcypt's compare function.
 
-#### Clarifai GRPC Client
+#### Clarifai
+
+##### Clarifai GRPC Client
 
 The Clarifai gRPC client connects over HTTP/2, which features are still unsupported on the browser client.  Use of the gRPC client was recommended by Clarifai over connecting via HTTP+JSON through the front-end app.  Benefits of using gRPC include:
 
 1. Increased throughput/reduced network constraint: gRPC Protobuf-encoded binary messages result in smaller payloads that serialiase quickly on server and client; and HTTP/2 protocol allows multiplexing of multiple HTTP/2 calls over a single TCP connection.
+   
 2. Prescriptive gRPC specification about the format that a gRPC service must follow, ensuring consistency across platforms and implementations.  Clients can also specify request timeouts.
+   
 3. Code generation from the gRPC client is strongly typed, eliminating duplication of messages during the creation of RESTful JSON Web API (in this case /images endpoint); consequently, additional tooling is required to analyse Protobuf payloads and to compose requests by hand - the increased complexity adding to development time.
+
 4. Supports real-time bi-directional streaming, though only unary streaming was used in this project.
 
-Making predictions on image inputs 
+##### Using the clarifai-nodejs-grpc library
+
+The static approach to using the [clarifai-nodejs-grpc](https://github.com/Clarifai/clarifai-nodejs-grpc) library was chosen over the dynamic approach as it provides type annotations via TypeScript declaration files, improving the IDE auto-completion experience. The only difference is in the syntax - the dynamic approach uses a stub to access all methods available in the Clarifai API.
+
+The static approach involves: 
+1. Creating the <code>V2Client</code> object with which to access all Clarifai API functionality, and the <code>Metadata</code> object that is used to authenticate by means of the Clarifai Personal Access Token (PAT) key. 
+
+2. Setting up the request for PostWorkflowResults with the UserId and AppId, WorkflowId (of the face-sentiments workflow obtained from publicly available Clarifai/main apps and workflows), default OutputConfig and image input data set to the passed-in imageUrl.
+
+3. The request and metadata are then sent to the Clarifai gRPC service via the postWorkflowResults function, which will return a response or error via the callback function passed in as the third parameter in the function.
+
+4. The list of outputs was obtained from the list of results returned in the <code>response</code> object.  For an image input supplied, a list of regions was returned by the workflow, which comprised of bounding boxes and (sentiments) concepts.  The bounding boxes and sentiments would be returned as a JSON response to the called or the /images endpoint.  Types were defined for BoundingBox, Sentiment and BoxSentiment as a contract for the return types.  Each face detected in the image would have a BoundingBox region and its associated list of Sentiments returned in the form of a JSON as a BoxSentiment object.
+
+##### Making predictions
+
+This project uses a [publicly available workflow for face-sentiments detection](https://clarifai.com/clarifai/main/workflows/Face-Sentiment), which passes images through a face-detection model before passing the cropped face-detection regions to the sentiments model.  The multi-model workflow combines face detection and sentiment classification of 7 concepts: anger, disgust, fear, neutral, happiness, sadness, and contempt.
+
+Model predictions on image inputs can be made from image URLs or bytes.  For this project, submission by image URL was selected.  The imageUrl is submitted to the face-sentiments [workflow](https://docs.clarifai.com/api-guide/workflows/common-workflows/workflow-predict). 
+
+##### Challenges
+
+1. TypeScript [Optional Chaining](https://stackoverflow.com/a/15260828) was utilised a lot as the <code>getStatus()</code> method of the <code>response</code> object may return <code>undefined</code> (from the type definition).  
+
+2. The Clarifai documentation with regards to its gRPC implementation was more , so the code was cobbled together through much use of <code>console.log</code>, manually checking the type definition files through the VSCode IDE, and sifting through the provided example JSON output files for the face-sentiment detection workflow found in the Clarifai user's app dashboard.  
 
 #### Knex
 
@@ -596,6 +651,7 @@ Tests for the app server and infrastructure not yet added.
 [Clarifai NodeJS Tutorial](https://docs.clarifai.com/tutorials/node-js-tutorial) 
 [Clarifai Make Model Predictions in your workflows](https://docs.clarifai.com/api-guide/workflows/common-workflows/workflow-predict/)
 [Clarifai/main app: models and workflows built by Clarifai - Visual Classifiers, Moderation, Visual Classifiers](https://clarifai.com/clarifai/main)
+[Clarifai API Swagger](https://api.clarifai.com/api-doc/?url=https://api.clarifai.com/v2/swagger.json)
 
 ### Postgres
 
@@ -730,6 +786,7 @@ Tests for the app server and infrastructure not yet added.
 [Chown command in Linux (with examples)](https://linuxopsys.com/topics/chown-command-in-linux)
 [TypeScript Utility Types](https://www.typescriptlang.org/docs/handbook/utility-types.html)
 [TypeScript 2.0  non-null assertion operator](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-0.html#non-null-assertion-operator)
+[TypeScript Optional Chaining](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#optional-chaining)
 [Using curl verbose](https://everything.curl.dev/usingcurl/verbose)
 [NTU HowTo guide on Environment Variables](https://www3.ntu.edu.sg/home/ehchua/programming/howto/Environment_Variables.html#zz-3.)
 [Mixed media content: Website delivers HTTPS pages but contains HTTP links](https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content/How_to_fix_website_with_mixed_content)
