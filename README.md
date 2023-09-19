@@ -46,7 +46,7 @@ npm run start
 ```
 
 ### Enhancement/Todo
-Instead of using the <code>concurrently</code> npm package to build and run, <code>tsnode</code> could have been used to build and run the TypeScript code instead.
+Instead of using the <code>concurrently</code> npm package to synchronise the build and run scripts, <code>tsnode</code> could have been used to build and run the TypeScript code instead.
 
 ## Technical Description
 
