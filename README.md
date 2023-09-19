@@ -872,7 +872,7 @@ Tests for the app server and infrastructure not yet added.
 
 #### Other AWS resources
 
-[Diving Deep into EC2 Spot Instace Cost and Operational Practices](https://aws.amazon.com/pt/blogs/compute/diving-deep-into-ec2-spot-instance-cost-and-operational-practices/)
+[Diving Deep into EC2 Spot Instance Cost and Operational Practices](https://aws.amazon.com/pt/blogs/compute/diving-deep-into-ec2-spot-instance-cost-and-operational-practices/)
 
 [AWS Guide to Reference Amazon Resource Names(ARNs)](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference-arns.html)
 
