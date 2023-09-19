@@ -9,13 +9,13 @@ GitHub repo for face-app client located at [https://github.com/rainbowchook/face
 
 The deployed front-end app is located at [https://face-app-lilac.vercel.app/](https://face-app-lilac.vercel.app/)
 
-This project has been successfully deployed to an AWS EC2 Spot Instance by a manually triggered GitHub Actions worflow using AWS CDK.  Each deployment will result in a different public address.  To save cost, the CloudFormation stack is torn down each time after testing.
-
 ![Docker Image CI status](https://github.com/rainbowchook/face-app-api/actions/workflows/docker-image.yml/badge.svg)
 
 Express server Docker Image: [https://hub.docker.com/r/rainbowchook/faces-app-api](https://hub.docker.com/r/rainbowchook/faces-app-api)
 
 ![Manual CDK Deployment status](https://github.com/rainbowchook/face-app-api/actions/workflows/aws-cdk-ec2.yml/badge.svg)
+
+This project has been successfully deployed to an AWS EC2 Spot Instance by a manually triggered GitHub Actions worflow using AWS CDK.  Each deployment will result in a different public address.  To save cost, the CloudFormation stack is torn down each time after testing.
 
 ## Available scripts
 
