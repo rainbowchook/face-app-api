@@ -916,3 +916,5 @@ Tests for the app server and infrastructure not yet added.
 
 [Getting Started with Writing and Formatting on GitHub: Basic Writing and Formatting Syntax](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#images)
 
+[Git Squash the last X commits](https://www.baeldung.com/ops/git-squash-commits)
+
