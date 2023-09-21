@@ -708,6 +708,8 @@ Tests for the app server and infrastructure not yet added.
 
 [Node Docker Good Defaults](https://github.com/BretFisher/node-docker-good-defaults/blob/69c923bc646bc96003e9ada55d1ec5ca943a1b19/test/sample.js)
 
+[Error "failed to read dockerfile: no such file or directory": Use <code>docker build -f .\DOCKERFILE .</code>](https://github.com/docker/for-win/issues/8781)
+
 #### Postgres Docker
 
 [How to use the Postgres Docker Official Image](https://www.docker.com/blog/how-to-use-the-postgres-docker-official-image/)
